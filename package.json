@@ -1,0 +1,67 @@
+{
+  "name": "mershai-api",
+  "version": "1.0.1",
+  "description": "Backend API service for Mershai E-commerce application",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "lint": "eslint .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "mershai",
+    "ecommerce",
+    "api",
+    "node",
+    "express",
+    "mongoose"
+  ],
+  "contributors": [
+    {
+      "name": "Afzal Ahmad",
+      "email": "skafzalahmed143@gmail.com"
+    },
+    {
+      "name": "Gopala krishna",
+      "email": "kk393272@gmail.com"
+    }
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.995.0",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-async-handler": "^1.2.0",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.0.2",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "multer-s3": "^3.0.1",
+    "nodemailer": "^7.0.12",
+    "xss-clean": "^0.1.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "globals": "^17.4.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "nodemon": "^3.1.11"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix"
+    ]
+  }
+}
