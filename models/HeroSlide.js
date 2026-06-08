@@ -1,32 +1,50 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const heroSlideSchema = mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-  },
-  subtitle: {
-    type: String,
-    required: true,
-  },
-  media: {
-    type: String,
-    required: true,
-  },
-  link: {
-    type: String,
-    default: '/shop',
-  },
-  order: {
-    type: Number,
-    default: 0,
-  },
-  isActive: {
-    type: Boolean,
-    default: true,
-  }
+const HeroSlide = sequelize.define('HeroSlide', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    title: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    subtitle: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    media: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    link: {
+        type: DataTypes.STRING,
+        defaultValue: '/shop',
+    },
+    order: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
-  timestamps: true,
+    timestamps: true,
 });
 
-module.exports = mongoose.model('HeroSlide', heroSlideSchema);
+HeroSlide.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
+
+module.exports = HeroSlide;

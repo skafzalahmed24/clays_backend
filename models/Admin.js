@@ -1,59 +1,72 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 const bcrypt = require('bcryptjs');
 
-const adminSchema = mongoose.Schema(
-    {
-        name: {
-            type: String,
-            required: [true, 'Please add a name'],
-        },
-        email: {
-            type: String,
-            required: [true, 'Please add an email'],
-            unique: true,
-            match: [
-                /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-                'Please add a valid email',
-            ],
-        },
-        password: {
-            type: String,
-            required: [true, 'Please add a password'],
-            minlength: 6,
-        },
-        role: {
-            type: String,
-            default: 'admin', // Always admin
-        },
-        permissions: {
-            type: [String], // Future proofing: ['manage_products', 'manage_orders']
-            default: ['all'],
-        },
-        otp: {
-            type: String,
-        },
-        otpExpires: {
-            type: Date,
-        }
+const Admin = sequelize.define('Admin', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
     },
-    {
-        timestamps: true,
-    }
-);
-
-// Encrypt password using bcrypt
-adminSchema.pre('save', async function () {
-    if (!this.isModified('password')) {
-        return;
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        validate: {
+            isEmail: true,
+        },
+    },
+    password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    role: {
+        type: DataTypes.STRING,
+        defaultValue: 'admin',
+    },
+    permissions: {
+        type: DataTypes.JSONB,
+        defaultValue: ['all'],
+    },
+    otp: {
+        type: DataTypes.STRING,
+    },
+    otpExpires: {
+        type: DataTypes.DATE,
+    },
+    // Virtual getter for _id to ensure compatibility with MongoDB-style code
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
+}, {
+    timestamps: true,
+    hooks: {
+        beforeSave: async (admin) => {
+            if (admin.changed('password')) {
+                const salt = await bcrypt.genSalt(10);
+                admin.password = await bcrypt.hash(admin.password, salt);
+            }
+        },
+    },
 });
 
-// Match user entered password to hashed password in database
-adminSchema.methods.matchPassword = async function (enteredPassword) {
+// Instance method to compare password
+Admin.prototype.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-module.exports = mongoose.model('Admin', adminSchema);
+// Override toJSON to include _id in API responses
+Admin.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
+
+module.exports = Admin;

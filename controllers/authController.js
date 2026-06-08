@@ -23,7 +23,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // Check if user exists
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ where: { email } });
 
     if (userExists) {
         res.status(400);
@@ -49,7 +49,7 @@ const registerUser = asyncHandler(async (req, res) => {
         try {
             await sendEmail({
                 email: user.email,
-                subject: 'Mershai - Account Verification',
+                subject: 'Clarysays - Account Verification',
                 message
             });
             
@@ -60,8 +60,7 @@ const registerUser = asyncHandler(async (req, res) => {
                 isVerified: false
             }, "Registered successfully. Please check your email for verification code.", 201);
         } catch {
-            // If email fails, we shouldn't delete user but let them resend code or contact support. 
-            // For now, return success but warn.
+            // If email fails, return success but warn
             successResponse(res, {
                 _id: user.id,
                 name: user.name,
@@ -82,7 +81,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
     // Check for user email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
 
     if (user && (await user.matchPassword(password))) {
         if (!user.isVerified) {
@@ -95,11 +94,11 @@ const loginUser = asyncHandler(async (req, res) => {
              try {
                 await sendEmail({
                     email: user.email,
-                    subject: 'Mershai - Account Verification',
+                    subject: 'Clarysays - Account Verification',
                     message
                 });
              } catch {
-                 console.log("Failed to send verification email on login");
+                  console.log("Failed to send verification email on login");
              }
 
              res.status(401).json({
@@ -110,16 +109,15 @@ const loginUser = asyncHandler(async (req, res) => {
              return;
         }
 
-        // Generate Refresh Token (Cookie)
         // Generate Refresh Token
-        const refreshToken = generateRefreshToken(res, user._id);
+        const refreshToken = generateRefreshToken(res, user.id);
 
         successResponse(res, {
             _id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
-            token: generateAccessToken(user._id),
+            token: generateAccessToken(user.id),
             refreshToken,
         });
     } else {
@@ -134,7 +132,7 @@ const loginUser = asyncHandler(async (req, res) => {
 const verifyOTP = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
         res.status(400);
@@ -148,20 +146,19 @@ const verifyOTP = asyncHandler(async (req, res) => {
 
     if (user.otp === otp && user.otpExpire > Date.now()) {
         user.isVerified = true;
-        user.otp = undefined;
-        user.otpExpire = undefined;
+        user.otp = null;
+        user.otpExpire = null;
         await user.save();
 
-        // Generate Refresh Token (Cookie)
         // Generate Refresh Token
-        const refreshToken = generateRefreshToken(res, user._id);
+        const refreshToken = generateRefreshToken(res, user.id);
 
         successResponse(res, {
             _id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
-            token: generateAccessToken(user._id),
+            token: generateAccessToken(user.id),
             refreshToken,
         }, "Email verified successfully");
     } else {
@@ -175,7 +172,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
 // @access  Public
 const resendOTP = asyncHandler(async (req, res) => {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
         res.status(404);
@@ -196,7 +193,7 @@ const resendOTP = asyncHandler(async (req, res) => {
     try {
         await sendEmail({
              email: user.email,
-             subject: 'Mershai - Resend Verification Code',
+             subject: 'Clarysays - Resend Verification Code',
              message
         });
         successResponse(res, null, "OTP resent successfully");
@@ -211,7 +208,7 @@ const resendOTP = asyncHandler(async (req, res) => {
 // @access  Public
 const forgotPassword = asyncHandler(async (req, res) => {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
         res.status(404);
@@ -227,20 +224,19 @@ const forgotPassword = asyncHandler(async (req, res) => {
     try {
         await sendEmail({
              email: user.email,
-             subject: 'Mershai - Password Reset Code',
+             subject: 'Clarysays - Password Reset Code',
              message
         });
         successResponse(res, null, "Reset code sent to email");
     } catch {
         if (process.env.NODE_ENV !== 'production') {
-             // In Dev, allow proceeding even if email fails (OTP is logged in console)
              console.log("Email failed in Dev (ignoring)");
              successResponse(res, null, "Reset code generated (check console)");
              return; 
         }
 
-        user.otp = undefined;
-        user.otpExpire = undefined;
+        user.otp = null;
+        user.otpExpire = null;
         await user.save();
         res.status(500);
         throw new Error('Email could not be sent');
@@ -252,7 +248,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 // @access  Public
 const resetPassword = asyncHandler(async (req, res) => {
     const { email, otp, password } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
         res.status(404);
@@ -261,8 +257,8 @@ const resetPassword = asyncHandler(async (req, res) => {
 
     if (user.otp === otp && user.otpExpire > Date.now()) {
         user.password = password;
-        user.otp = undefined;
-        user.otpExpire = undefined;
+        user.otp = null;
+        user.otpExpire = null;
         await user.save();
 
         successResponse(res, null, "Password reset successful");
@@ -283,8 +279,6 @@ const getMe = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Public
 const logoutUser = asyncHandler(async (req, res) => {
-    // clearRefreshToken(res, 'jwt-user'); // No longer using cookies
-    // Frontend handles logout by deleting local storage
     successResponse(res, null, 'Logged out successfully');
 });
 
@@ -301,7 +295,6 @@ const refreshToken = asyncHandler(async (req, res) => {
 
     try {
         const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-        // We could check if user exists or is blocked here too
         const accessToken = generateAccessToken(decoded.id);
 
         successResponse(res, { token: accessToken });

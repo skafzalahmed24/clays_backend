@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Adjust path to .env file if necessary (assuming script is in mershai_api/scripts/)
+// Adjust path to .env file if necessary (assuming script is in Clarysays_api/scripts/)
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const dropIndex = async () => {

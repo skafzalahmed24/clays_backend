@@ -1,24 +1,42 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const socialPostSchema = mongoose.Schema({
-  media: {
-    type: String,
-    required: true,
-  },
-  platform: {
-    type: String,
-    default: 'Instagram',
-  },
-  link: {
-    type: String,
-    default: '#',
-  },
-  isActive: {
-    type: Boolean,
-    default: true,
-  }
+const SocialPost = sequelize.define('SocialPost', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    media: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    platform: {
+        type: DataTypes.STRING,
+        defaultValue: 'Instagram',
+    },
+    link: {
+        type: DataTypes.STRING,
+        defaultValue: '#',
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
-  timestamps: true,
+    timestamps: true,
 });
 
-module.exports = mongoose.model('SocialPost', socialPostSchema);
+SocialPost.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
+
+module.exports = SocialPost;

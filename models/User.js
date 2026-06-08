@@ -1,111 +1,83 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 const bcrypt = require('bcryptjs');
 
-const userSchema = mongoose.Schema(
-    {
-        name: {
-            type: String,
-            required: [true, 'Please add a name'],
-        },
-        email: {
-            type: String,
-            required: [true, 'Please add an email'],
-            unique: true,
-            match: [
-                /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-                'Please add a valid email',
-            ],
-        },
-        password: {
-            type: String,
-            required: [true, 'Please add a password'],
-            minlength: 6,
-        },
-        role: {
-            type: String,
-            enum: ['user', 'admin'],
-            default: 'user',
-        },
-        isVerified: {
-            type: Boolean,
-            default: false,
-        },
-        otp: String,
-        otpExpire: Date,
-        addresses: [
-            {
-                firstName: {
-                    type: String,
-                    required: true,
-                },
-                lastName: {
-                    type: String,
-                    required: true,
-                },
-                email: {
-                    type: String,
-                    required: true,
-                },
-                phone: {
-                    type: String,
-                    required: true,
-                },
-                address: {
-                    type: String,
-                    required: true,
-                },
-                apartment: String,
-                city: {
-                    type: String,
-                    required: true,
-                },
-                postalCode: {
-                    type: String,
-                    required: true,
-                },
-                isDefault: {
-                    type: Boolean,
-                    default: false,
-                },
-            },
-        ],
-        cart: [
-            {
-                product: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    ref: 'Product',
-                },
-                qty: {
-                    type: Number,
-                    default: 1,
-                },
-            },
-        ],
-        wishlist: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'Product',
-            },
-        ],
+const User = sequelize.define('User', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
     },
-    {
-        timestamps: true,
-    }
-);
-
-// Encrypt password using bcrypt
-userSchema.pre('save', async function () {
-    if (!this.isModified('password')) {
-        return;
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        validate: {
+            isEmail: true,
+        },
+    },
+    password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    role: {
+        type: DataTypes.STRING,
+        defaultValue: 'user',
+    },
+    isVerified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    otp: {
+        type: DataTypes.STRING,
+    },
+    otpExpire: {
+        type: DataTypes.DATE,
+    },
+    addresses: {
+        type: DataTypes.JSONB,
+        defaultValue: [],
+    },
+    cart: {
+        type: DataTypes.JSONB,
+        defaultValue: [],
+    },
+    wishlist: {
+        type: DataTypes.JSONB,
+        defaultValue: [],
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
+}, {
+    timestamps: true,
+    hooks: {
+        beforeSave: async (user) => {
+            if (user.changed('password')) {
+                const salt = await bcrypt.genSalt(10);
+                user.password = await bcrypt.hash(user.password, salt);
+            }
+        },
+    },
 });
 
-// Match user entered password to hashed password in database
-userSchema.methods.matchPassword = async function (enteredPassword) {
+// Instance method to compare password
+User.prototype.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+// Override toJSON to include _id in API responses
+User.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
+
+module.exports = User;

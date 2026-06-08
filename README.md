@@ -1,6 +1,6 @@
-# Mershai API
+# Clarysays API
 
-This is the backend API for the Mershai application.
+This is the backend API for the Clarysays application.
 
 ## Prerequisites
 

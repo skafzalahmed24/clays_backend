@@ -1,24 +1,45 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const pageSchema = mongoose.Schema({
+const Page = sequelize.define('Page', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
     slug: {
-        type: String,
-        required: true,
+        type: DataTypes.STRING,
+        allowNull: false,
         unique: true,
-        index: true
     },
     modules: {
-        type: mongoose.Schema.Types.Mixed,
-        default: {}
+        type: DataTypes.JSONB,
+        defaultValue: {},
     },
     seo: {
-        title: { type: String },
-        description: { type: String }
-    }
+        type: DataTypes.JSONB,
+        defaultValue: {},
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
-    timestamps: true
+    timestamps: true,
+    indexes: [
+        {
+            unique: true,
+            fields: ['slug'],
+        },
+    ],
 });
 
-const Page = mongoose.model('Page', pageSchema);
+Page.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
 
 module.exports = Page;

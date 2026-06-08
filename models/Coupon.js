@@ -1,45 +1,70 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const couponSchema = new mongoose.Schema({
-    code: {
-        type: String,
-        required: true,
-        unique: true,
-        uppercase: true,
-        trim: true
+const Coupon = sequelize.define('Coupon', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
     },
-    // percentage or fixed amount
+    code: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
     type: {
-        type: String,
-        enum: ['percentage', 'fixed'],
-        default: 'percentage'
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'percentage',
+        validate: {
+            isIn: [['percentage', 'fixed']],
+        },
     },
     value: {
-        type: Number,
-        required: true
+        type: DataTypes.FLOAT,
+        allowNull: false,
     },
     minOrderAmount: {
-        type: Number,
-        default: 0
+        type: DataTypes.FLOAT,
+        defaultValue: 0,
     },
     expiryDate: {
-        type: Date,
-        required: true
+        type: DataTypes.DATE,
+        allowNull: false,
     },
     isActive: {
-        type: Boolean,
-        default: true
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
     },
     usageLimit: {
-        type: Number,
-        default: null // null means unlimited
+        type: DataTypes.INTEGER,
+        defaultValue: null,
     },
     usedCount: {
-        type: Number,
-        default: 0
-    }
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
-    timestamps: true
+    timestamps: true,
+    hooks: {
+        beforeSave: (coupon) => {
+            if (coupon.code) {
+                coupon.code = coupon.code.toUpperCase().trim();
+            }
+        },
+    },
 });
 
-module.exports = mongoose.model('Coupon', couponSchema);
+Coupon.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
+
+module.exports = Coupon;

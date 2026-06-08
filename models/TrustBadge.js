@@ -1,14 +1,42 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const trustBadgeSchema = mongoose.Schema({
-    text: { type: String, required: true },
-    icon: { type: String, required: true }, // Can be icon component name (e.g., "FaShippingFast") or image URL
-    order: { type: Number, default: 0 },
-    isActive: { type: Boolean, default: true },
+const TrustBadge = sequelize.define('TrustBadge', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    text: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    icon: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    order: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
     timestamps: true,
 });
 
-const TrustBadge = mongoose.model('TrustBadge', trustBadgeSchema);
+TrustBadge.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
 
 module.exports = TrustBadge;

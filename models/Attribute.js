@@ -1,28 +1,46 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const attributeSchema = mongoose.Schema(
-    {
-        type: {
-            type: String, // 'material', 'color', 'occasion', 'subCategory'
-            required: true,
-        },
-        name: {
-            type: String,
-            required: true,
-        },
-        value: {
-            type: String, // Optional, e.g. for hex code or simple string value if name is label
-        },
-        img: {
-            type: String, // URL to image
-        }
+const Attribute = sequelize.define('Attribute', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
     },
-    {
-        timestamps: true,
-    }
-);
+    type: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    value: {
+        type: DataTypes.STRING,
+    },
+    img: {
+        type: DataTypes.STRING,
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
+}, {
+    timestamps: true,
+    indexes: [
+        {
+            unique: true,
+            fields: ['type', 'name'],
+        },
+    ],
+});
 
-// Compound index to prevent duplicates
-attributeSchema.index({ type: 1, name: 1 }, { unique: true });
+Attribute.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
 
-module.exports = mongoose.model('Attribute', attributeSchema);
+module.exports = Attribute;

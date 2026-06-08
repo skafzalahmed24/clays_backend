@@ -1,14 +1,42 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const faqSchema = mongoose.Schema({
-    question: { type: String, required: true },
-    answer: { type: String, required: true },
-    order: { type: Number, default: 0 },
-    isActive: { type: Boolean, default: true },
+const FAQ = sequelize.define('FAQ', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    question: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    answer: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    order: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
     timestamps: true,
 });
 
-const FAQ = mongoose.model('FAQ', faqSchema);
+FAQ.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
 
 module.exports = FAQ;

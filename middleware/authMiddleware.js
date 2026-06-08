@@ -16,7 +16,7 @@ const protect = async (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
             // Get user from the token
-            req.user = await User.findById(decoded.id).select('-password');
+            req.user = await User.findByPk(decoded.id, { attributes: { exclude: ['password'] } });
 
             next();
         } catch (error) {
@@ -51,7 +51,7 @@ const protectAdmin = async (req, res, next) => {
             
             // Check Admin collection specificially
             const Admin = require('../models/Admin');
-            req.user = await Admin.findById(decoded.id).select('-password');
+            req.user = await Admin.findByPk(decoded.id, { attributes: { exclude: ['password'] } });
 
             if (!req.user) {
                  return res.status(401).json({ message: 'Not authorized, admin not found' });
@@ -87,11 +87,11 @@ const protectPublic = async (req, res, next) => {
         // 2. If not public token, try to verify as a user token
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = await User.findById(decoded.id).select('-password');
+            req.user = await User.findByPk(decoded.id, { attributes: { exclude: ['password'] } });
              if (!req.user) {
-                 // Try Admin if user not found (admins should also be able to view public data)
-                 const Admin = require('../models/Admin');
-                 req.user = await Admin.findById(decoded.id).select('-password');
+                  // Try Admin if user not found (admins should also be able to view public data)
+                  const Admin = require('../models/Admin');
+                  req.user = await Admin.findByPk(decoded.id, { attributes: { exclude: ['password'] } });
             }
              
             if (req.user) {

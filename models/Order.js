@@ -1,91 +1,91 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const orderSchema = mongoose.Schema(
-    {
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            required: true,
-            ref: 'User',
-        },
-        orderItems: [
-            {
-                name: { type: String, required: true },
-                qty: { type: Number, required: true },
-                image: { type: String, required: true },
-                price: { type: Number, required: true },
-                product: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    required: true,
-                    ref: 'Product',
-                },
-            },
-        ],
-        shippingAddress: {
-            address: { type: String, required: true },
-            city: { type: String, required: true },
-            postalCode: { type: String, required: true },
-            country: { type: String, required: true },
-            phone: { type: String, required: true },
-        },
-        paymentMethod: {
-            type: String,
-            required: true,
-        },
-        paymentResult: {
-            id: { type: String },
-            status: { type: String },
-            update_time: { type: String },
-            email_address: { type: String },
-        },
-        itemsPrice: {
-            type: Number,
-            required: true,
-            default: 0.0,
-        },
-        taxPrice: {
-            type: Number,
-            required: true,
-            default: 0.0,
-        },
-        shippingPrice: {
-            type: Number,
-            required: true,
-            default: 0.0,
-        },
-        totalPrice: {
-            type: Number,
-            required: true,
-            default: 0.0,
-        },
-        isPaid: {
-            type: Boolean,
-            required: true,
-            default: false,
-        },
-        paidAt: {
-            type: Date,
-        },
-        isDelivered: {
-            type: Boolean,
-            required: true,
-            default: false,
-        },
-        deliveredAt: {
-            type: Date,
-        },
-        status: {
-            type: String,
-            required: true,
-            default: 'Pending',
-            enum: ['Pending', 'Processing', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],
-        },
-        cancelledAt: {
-            type: Date,
+const Order = sequelize.define('Order', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    userId: {
+        type: DataTypes.UUID,
+        allowNull: false,
+    },
+    orderItems: {
+        type: DataTypes.JSONB,
+        allowNull: false,
+    },
+    shippingAddress: {
+        type: DataTypes.JSONB,
+        allowNull: false,
+    },
+    paymentMethod: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    paymentResult: {
+        type: DataTypes.JSONB,
+    },
+    itemsPrice: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        defaultValue: 0.0,
+    },
+    taxPrice: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        defaultValue: 0.0,
+    },
+    shippingPrice: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        defaultValue: 0.0,
+    },
+    totalPrice: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        defaultValue: 0.0,
+    },
+    isPaid: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    paidAt: {
+        type: DataTypes.DATE,
+    },
+    isDelivered: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    deliveredAt: {
+        type: DataTypes.DATE,
+    },
+    status: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'Pending',
+    },
+    cancelledAt: {
+        type: DataTypes.DATE,
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
         },
     },
-    {
-        timestamps: true,
-    }
-);
+}, {
+    timestamps: true,
+});
 
-module.exports = mongoose.model('Order', orderSchema);
+// Override toJSON to include _id and alias user to userId in API responses
+Order.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    values.user = values.userId; // Alias user to userId for MongoDB query compatibility
+    return values;
+};
+
+module.exports = Order;

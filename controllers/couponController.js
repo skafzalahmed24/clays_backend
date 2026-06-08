@@ -7,7 +7,7 @@ const Coupon = require('../models/Coupon');
 const createCoupon = asyncHandler(async (req, res) => {
     const { code, type, value, minOrderAmount, expiryDate, usageLimit } = req.body;
 
-    const couponExists = await Coupon.findOne({ code });
+    const couponExists = await Coupon.findOne({ where: { code } });
 
     if (couponExists) {
         res.status(400);
@@ -34,11 +34,12 @@ const getCoupons = asyncHandler(async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const total = await Coupon.countDocuments({});
-    const coupons = await Coupon.find({})
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit);
+    const total = await Coupon.count();
+    const coupons = await Coupon.findAll({
+        order: [['createdAt', 'DESC']],
+        offset: skip,
+        limit: limit
+    });
 
     res.json({
         coupons,
@@ -52,10 +53,10 @@ const getCoupons = asyncHandler(async (req, res) => {
 // @route   DELETE /api/coupons/:id
 // @access  Private/Admin
 const deleteCoupon = asyncHandler(async (req, res) => {
-    const coupon = await Coupon.findById(req.params.id);
+    const coupon = await Coupon.findByPk(req.params.id);
 
     if (coupon) {
-        await coupon.deleteOne();
+        await coupon.destroy();
         res.json({ message: 'Coupon removed' });
     } else {
         res.status(404);
@@ -69,7 +70,7 @@ const deleteCoupon = asyncHandler(async (req, res) => {
 const validateCoupon = asyncHandler(async (req, res) => {
     const { code, cartTotal } = req.body;
 
-    const coupon = await Coupon.findOne({ code, isActive: true });
+    const coupon = await Coupon.findOne({ where: { code, isActive: true } });
 
     if (!coupon) {
         res.status(404);

@@ -1,25 +1,39 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const megaMenuSchema = mongoose.Schema({
-    menuId: {
-        type: String,
-        required: true,
-        unique: true,
-        // Enum optional, but adhering to known keys is good practice:
-        // 'New Arrivals', 'Earrings', 'Rings', 'Necklaces', 'Bracelets', 
-        // 'Pendants', 'Wedding Collections', 'More Jewellery', 'Gifting', 'Diamond Jewellery'
+const MegaMenu = sequelize.define('MegaMenu', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
     },
-    categories: [{
-        title: { type: String, required: true },
-        items: [{ type: String }]
-    }],
+    menuId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+    categories: {
+        type: DataTypes.JSONB,
+        defaultValue: [],
+    },
     featured: {
-        title: { type: String },
-        link: { type: String },
-        img: { type: String }
-    }
+        type: DataTypes.JSONB,
+        defaultValue: {},
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
     timestamps: true,
 });
 
-module.exports = mongoose.model('MegaMenu', megaMenuSchema);
+MegaMenu.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
+
+module.exports = MegaMenu;

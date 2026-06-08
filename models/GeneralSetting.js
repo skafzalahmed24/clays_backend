@@ -1,100 +1,151 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const generalSettingSchema = mongoose.Schema({
-    storeName: { type: String, default: 'Mershai' },
-    supportEmail: { type: String, default: 'support@mershai.com' },
-    contactPhone: { type: String, default: '+91 98765 43210' },
-    address: { // Legacy - moving to addresses array
-        line1: { type: String, default: '123 Jewelry Lane' },
-        line2: { type: String, default: 'Fashion Street' },
-        city: { type: String, default: 'Mumbai' },
-        pincode: { type: String, default: '400001' },
-        googleMapsUrl: { type: String, default: '' }
+const GeneralSetting = sequelize.define('GeneralSetting', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
     },
-    addresses: [
-        {
-            line1: String,
-            line2: String,
-            city: String,
-            pincode: String,
-            country: { type: String, default: 'India' },
-            googleMapsUrl: String
-        }
-    ],
+    storeName: {
+        type: DataTypes.STRING,
+        defaultValue: 'Clarysays',
+    },
+    supportEmail: {
+        type: DataTypes.STRING,
+        defaultValue: 'support@clarysays.com',
+    },
+    contactPhone: {
+        type: DataTypes.STRING,
+        defaultValue: '+91 98765 43210',
+    },
+    address: {
+        type: DataTypes.JSONB,
+        defaultValue: {
+            line1: '123 Herbal Garden Road',
+            line2: 'Green Sector',
+            city: 'Mumbai',
+            pincode: '400001',
+            googleMapsUrl: '',
+        },
+    },
+    addresses: {
+        type: DataTypes.JSONB,
+        defaultValue: [],
+    },
     socialLinks: {
-        instagram: { type: String, default: '#' },
-        facebook: { type: String, default: '#' },
-        youtube: { type: String, default: '#' }
+        type: DataTypes.JSONB,
+        defaultValue: {
+            instagram: '#',
+            facebook: '#',
+            youtube: '#',
+        },
     },
     uiLabels: {
-        search: {
-            placeholder: { type: String, default: 'Search for jewellery...' },
-            popularTerms: [{ type: String }],
-            noResults: { type: String, default: 'No results found' }
+        type: DataTypes.JSONB,
+        defaultValue: {
+            search: {
+                placeholder: 'Search for herbal products...',
+                popularTerms: ['Hair Oil', 'Shampoo', 'Conditioner'],
+                noResults: 'No products found',
+            },
+            cart: {
+                emptyMessage: 'Your bag is empty.',
+                startShoppingBtn: 'Start Shopping',
+                disclaimer: 'Shipping and taxes calculated at checkout.',
+            },
+            auth: {
+                loginTitle: 'Welcome Back',
+                loginSubtitle: 'Login to access your personalized shopping experience',
+                registerTitle: 'Join the Club',
+                registerSubtitle: 'Create an account to unlock exclusive benefits',
+            },
+            product: {
+                relatedTitle: 'You May Also Like',
+                reviewsTitle: 'Customer Reviews',
+            },
         },
-        cart: {
-            emptyMessage: { type: String, default: 'Your bag is empty.' },
-            startShoppingBtn: { type: String, default: 'Start Shopping' },
-            disclaimer: { type: String, default: 'Shipping and taxes calculated at checkout.' }
-        },
-        auth: {
-            loginTitle: { type: String, default: 'Welcome Back' },
-            loginSubtitle: { type: String, default: 'Login to access your personalized shopping experience' },
-            registerTitle: { type: String, default: 'Join the Club' },
-            registerSubtitle: { type: String, default: 'Create an account to unlock exclusive benefits' }
-        },
-        product: {
-            relatedTitle: { type: String, default: 'You May Also Like' },
-            reviewsTitle: { type: String, default: 'Customer Reviews' }
-        }
     },
-    taxRate: { type: Number, default: 18 },
-    currency: { type: String, default: 'INR' },
-    enableReviews: { type: Boolean, default: true },
-    footerLinks: [
-        {
-            title: { type: String, required: true },
-            links: [
-                { label: String, url: String }
-            ]
-        }
-    ],
-    openingHours: [
-        {
-            label: { type: String, default: 'Mon - Sat' },
-            value: { type: String, default: '11:00 AM - 8:00 PM' }
-        }
-    ],
-    contactSubjects: { type: [String], default: ['General Inquiry', 'Custom Order', 'Appointment Request', 'Feedback'] },
+    taxRate: {
+        type: DataTypes.FLOAT,
+        defaultValue: 18,
+    },
+    currency: {
+        type: DataTypes.STRING,
+        defaultValue: 'INR',
+    },
+    enableReviews: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+    },
+    footerLinks: {
+        type: DataTypes.JSONB,
+        defaultValue: [],
+    },
+    openingHours: {
+        type: DataTypes.JSONB,
+        defaultValue: [
+            {
+                label: 'Mon - Sat',
+                value: '11:00 AM - 8:00 PM',
+            },
+        ],
+    },
+    contactSubjects: {
+        type: DataTypes.JSONB,
+        defaultValue: ['General Inquiry', 'Order Status', 'Product Advice', 'Feedback'],
+    },
     announcement: {
-        text: { type: String, default: 'Unlock Joy with Extra Discounts on eGift Cards' },
-        link: { type: String, default: '/shop' }
+        type: DataTypes.JSONB,
+        defaultValue: {
+            text: 'Unlock Joy with Extra Discounts on eGift Cards',
+            link: '/shop',
+        },
     },
     productPolicies: {
-        shipping: { type: String, default: 'Free shipping on orders. Easy 7-day returns.' },
-        care: { type: String, default: 'Keep away from perfumes.' }
+        type: DataTypes.JSONB,
+        defaultValue: {
+            shipping: 'Free shipping on orders above ₹499. Easy returns.',
+            care: 'Store in a cool, dry place. For external use only.',
+        },
     },
     seo: {
-        defaultTitle: { type: String, default: 'Mershai' },
-        defaultDescription: { type: String, default: 'Mershai offers a curated collection of dark luxury jewelry.' }
+        type: DataTypes.JSONB,
+        defaultValue: {
+            defaultTitle: 'Clarysays',
+            defaultDescription: 'Clarysays offers premium herbal hair care products crafted with natural ingredients for healthy, beautiful hair.',
+        },
     },
     identity: {
-        logo: { type: String },
-        favicon: { type: String },
-        brandName: { type: String, default: 'Mershai' },
-        footerLogo: { type: String }
-    }
+        type: DataTypes.JSONB,
+        defaultValue: {
+            logo: '',
+            favicon: '',
+            brandName: 'Clarysays',
+            footerLogo: '',
+        },
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
     timestamps: true,
 });
 
-// Singleton helper
-generalSettingSchema.statics.getSingleton = async function () {
+// Singleton helper static method
+GeneralSetting.getSingleton = async function () {
     const doc = await this.findOne();
     if (doc) return doc;
     return await this.create({});
 };
 
-const GeneralSetting = mongoose.model('GeneralSetting', generalSettingSchema);
+GeneralSetting.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
 
 module.exports = GeneralSetting;

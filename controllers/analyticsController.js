@@ -2,30 +2,24 @@ const asyncHandler = require('express-async-handler');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const { successResponse } = require('../utils/responseHelper');
+const { sequelize } = require('../config/db');
+const { Op } = require('sequelize');
 
 // @desc    Get dashboard stats (users, orders, sales)
 // @route   GET /api/analytics/dashboard
 // @access  Private/Admin
 const getDashboardStats = asyncHandler(async (req, res) => {
     // 1. Total Users
-    const totalUsers = await User.countDocuments();
+    const totalUsers = await User.count();
 
     // 2. Total Orders
-    const totalOrders = await Order.countDocuments();
+    const totalOrders = await Order.count();
 
     // 3. Total Sales (Revenue) - Sum of all paid orders
-    const sales = await Order.aggregate([
-        {
-            $group: {
-                _id: null,
-                totalSales: { $sum: '$totalPrice' }
-            }
-        }
-    ]);
-    const totalSales = sales.length > 0 ? sales[0].totalSales : 0;
+    const totalSales = await Order.sum('totalPrice', { where: { isPaid: true } }) || 0;
 
     // 4. Pending Orders
-    const pendingOrders = await Order.countDocuments({ isDelivered: false });
+    const pendingOrders = await Order.count({ where: { isDelivered: false } });
 
     successResponse(res, {
         totalUsers,
@@ -42,26 +36,30 @@ const getSalesData = asyncHandler(async (req, res) => {
     const last7Days = new Date();
     last7Days.setDate(last7Days.getDate() - 7);
 
-    const salesData = await Order.aggregate([
-        {
-            $match: {
-                createdAt: { $gte: last7Days } // Filter last 7 days
+    // Group sales and count orders by date formatted as YYYY-MM-DD
+    const salesData = await Order.findAll({
+        attributes: [
+            [sequelize.literal("TO_CHAR(\"createdAt\", 'YYYY-MM-DD')"), '_id'],
+            [sequelize.fn('SUM', sequelize.col('totalPrice')), 'sales'],
+            [sequelize.fn('COUNT', sequelize.col('id')), 'orders']
+        ],
+        where: {
+            createdAt: {
+                [Op.gte]: last7Days
             }
         },
-        {
-            $group: {
-                _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-                sales: { $sum: "$totalPrice" },
-                orders: { $sum: 1 }
-            }
-        },
-        { $sort: { _id: 1 } } // Sort by date
-    ]);
+        group: [sequelize.literal("TO_CHAR(\"createdAt\", 'YYYY-MM-DD')")],
+        order: [[sequelize.literal("TO_CHAR(\"createdAt\", 'YYYY-MM-DD')"), 'ASC']],
+        raw: true
+    });
 
-    // Fill in missing days with 0 (optional, but good for charts)
-    // For MVP, just returning what we have is fine, frontend can handle gaps or we can improve later.
+    const formattedSalesData = salesData.map(item => ({
+        _id: item._id,
+        sales: parseFloat(item.sales || 0),
+        orders: parseInt(item.orders || 0)
+    }));
 
-    successResponse(res, salesData);
+    successResponse(res, formattedSalesData);
 });
 
 module.exports = {

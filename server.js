@@ -1,6 +1,10 @@
 const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
+
+// Load env vars
+dotenv.config();
+
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -9,13 +13,11 @@ const cookieParser = require('cookie-parser');
 // const mongoSanitize = require('express-mongo-sanitize'); // Replaced by custom middleware
 const { xssClean, mongoSanitizer } = require('./middleware/security');
 const rateLimit = require('express-rate-limit');
-const connectDB = require('./config/db');
-
-// Load env vars
-dotenv.config();
+const { connectDB } = require('./config/db');
 
 // Connect to database
 connectDB();
+require('./models');
 
 const app = express();
 
@@ -86,7 +88,7 @@ app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
 // Basic route
 app.get('/', (req, res) => {
-    res.send('Mershai API is running');
+    res.send('Clarysays API is running');
 });
 
 app.get('/api/version', (req, res) => {

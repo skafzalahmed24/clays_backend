@@ -8,7 +8,7 @@ const createRequest = async (req, res) => {
 
     try {
         // Check for existing request from this email for this product
-        const existingRequest = await StockRequest.findOne({ productId, userEmail });
+        const existingRequest = await StockRequest.findOne({ where: { productId, userEmail } });
 
         if (existingRequest) {
             return res.status(400).json({ message: 'You have already requested notification for this product.' });
@@ -36,11 +36,12 @@ const getRequests = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const total = await StockRequest.countDocuments({});
-        const requests = await StockRequest.find({})
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        const total = await StockRequest.count();
+        const requests = await StockRequest.findAll({
+            order: [['createdAt', 'DESC']],
+            offset: skip,
+            limit: limit
+        });
 
         res.status(200).json({
             requests,
@@ -58,13 +59,13 @@ const getRequests = async (req, res) => {
 // @access  Private/Admin
 const deleteRequest = async (req, res) => {
     try {
-        const request = await StockRequest.findById(req.params.id);
+        const request = await StockRequest.findByPk(req.params.id);
 
         if (!request) {
             return res.status(404).json({ message: 'Request not found' });
         }
 
-        await request.deleteOne();
+        await request.destroy();
         res.status(200).json({ id: req.params.id, message: 'Request removed' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -76,7 +77,7 @@ const deleteRequest = async (req, res) => {
 // @access  Private/Admin
 const updateRequest = async (req, res) => {
     try {
-        const request = await StockRequest.findById(req.params.id);
+        const request = await StockRequest.findByPk(req.params.id);
 
         if (request) {
             const oldStatus = request.status;
@@ -107,13 +108,12 @@ const updateRequest = async (req, res) => {
 
                     await sendEmail({
                         email: request.userEmail,
-                        subject: 'Product Back in Stock - Mershai',
+                        subject: 'Product Back in Stock - Clarysays',
                         message
                     });
                     
                 } catch (emailError) {
                     console.error("Failed to send stock notification email:", emailError);
-                    // We don't fail the request update, just log the error
                 }
             }
 

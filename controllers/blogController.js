@@ -9,11 +9,12 @@ const getBlogs = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const total = await Blog.countDocuments({});
-        const blogs = await Blog.find({})
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        const total = await Blog.count();
+        const blogs = await Blog.findAll({
+            order: [['createdAt', 'DESC']],
+            offset: skip,
+            limit: limit
+        });
 
         res.json({
             blogs,
@@ -31,7 +32,7 @@ const getBlogs = async (req, res) => {
 // @access  Public
 const getBlogById = async (req, res) => {
     try {
-        const blog = await Blog.findById(req.params.id);
+        const blog = await Blog.findByPk(req.params.id);
         if (blog) {
             res.json(blog);
         } else {
@@ -48,14 +49,13 @@ const getBlogById = async (req, res) => {
 const createBlog = async (req, res) => {
     try {
         const { title, excerpt, content, image, category } = req.body;
-        const blog = new Blog({
+        const createdBlog = await Blog.create({
             title,
             excerpt,
             content,
             image,
             category
         });
-        const createdBlog = await blog.save();
         res.status(201).json(createdBlog);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -68,7 +68,7 @@ const createBlog = async (req, res) => {
 const updateBlog = async (req, res) => {
     try {
         const { title, excerpt, content, image, category } = req.body;
-        const blog = await Blog.findById(req.params.id);
+        const blog = await Blog.findByPk(req.params.id);
 
         if (blog) {
             blog.title = title || blog.title;
@@ -92,9 +92,9 @@ const updateBlog = async (req, res) => {
 // @access  Private/Admin
 const deleteBlog = async (req, res) => {
     try {
-        const blog = await Blog.findById(req.params.id);
+        const blog = await Blog.findByPk(req.params.id);
         if (blog) {
-            await blog.deleteOne();
+            await blog.destroy();
             res.json({ message: 'Blog removed' });
         } else {
             res.status(404).json({ message: 'Blog not found' });

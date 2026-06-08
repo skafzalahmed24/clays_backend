@@ -1,24 +1,42 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const testimonialSchema = mongoose.Schema({
-  text: {
-    type: String,
-    required: true,
-  },
-  author: {
-    type: String,
-    required: true,
-  },
-  role: {
-    type: String,
-    default: 'Customer',
-  },
-  isActive: {
-    type: Boolean,
-    default: true,
-  }
+const Testimonial = sequelize.define('Testimonial', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    text: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    author: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    role: {
+        type: DataTypes.STRING,
+        defaultValue: 'Customer',
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
-  timestamps: true,
+    timestamps: true,
 });
 
-module.exports = mongoose.model('Testimonial', testimonialSchema);
+Testimonial.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
+
+module.exports = Testimonial;

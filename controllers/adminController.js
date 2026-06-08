@@ -26,7 +26,7 @@ const getDashboardStats = async (req, res) => {
         const { currentMonthStart, lastMonthStart, lastMonthEnd } = getDateRanges();
 
         // 1. Total Revenue & Growth
-        const allOrders = await Order.find({});
+        const allOrders = await Order.findAll();
         const totalRevenue = allOrders.reduce((acc, order) => acc + (order.totalPrice || 0), 0);
         
         const currentMonthRevenue = allOrders
@@ -46,17 +46,22 @@ const getDashboardStats = async (req, res) => {
         const ordersGrowth = calculateGrowth(currentMonthOrders, lastMonthOrders);
 
         // 3. New Customers & Growth
-        const allUsers = await User.find({});
+        const allUsers = await User.findAll();
         const newCustomers = allUsers.length;
         const currentMonthUsers = allUsers.filter(u => u.createdAt >= currentMonthStart).length;
         const lastMonthUsers = allUsers.filter(u => u.createdAt >= lastMonthStart && u.createdAt <= lastMonthEnd).length;
         const customersGrowth = calculateGrowth(currentMonthUsers, lastMonthUsers);
 
         // 4. Recent Orders
-        const recentOrders = await Order.find({})
-            .sort({ createdAt: -1 })
-            .limit(5)
-            .populate('user', 'name');
+        const recentOrders = await Order.findAll({
+            order: [['createdAt', 'DESC']],
+            limit: 5,
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['name']
+            }]
+        });
 
         res.json({
             totalRevenue,

@@ -1,20 +1,43 @@
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const path = require('path');
-const s3Client = require('../utils/minioClient');
+const fs = require('fs');
 
-// 1. Storage Configuration (S3/MinIO)
-const storage = multerS3({
-    s3: s3Client,
-    bucket: process.env.MINIO_BUCKET || 'mershai-media',
-    contentType: multerS3.AUTO_CONTENT_TYPE,
-    metadata: function (req, file, cb) {
-      cb(null, { fieldName: file.fieldname });
-    },
-    key: function (req, file, cb) {
-      cb(null, `media-${Date.now()}${path.extname(file.originalname)}`);
+let storage;
+
+const isMinioConfigured = 
+    process.env.MINIO_ENDPOINT && 
+    process.env.MINIO_PORT && 
+    process.env.MINIO_ACCESS_KEY && 
+    process.env.MINIO_SECRET_KEY;
+
+if (isMinioConfigured) {
+    const s3Client = require('../utils/minioClient');
+    storage = multerS3({
+        s3: s3Client,
+        bucket: process.env.MINIO_BUCKET || 'Clarysays-media',
+        contentType: multerS3.AUTO_CONTENT_TYPE,
+        metadata: function (req, file, cb) {
+          cb(null, { fieldName: file.fieldname });
+        },
+        key: function (req, file, cb) {
+          cb(null, `media-${Date.now()}${path.extname(file.originalname)}`);
+        }
+    });
+} else {
+    const uploadsDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
     }
-});
+    storage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            cb(null, uploadsDir);
+        },
+        filename: function (req, file, cb) {
+            cb(null, `media-${Date.now()}${path.extname(file.originalname)}`);
+        }
+    });
+}
 
 // 2. File Filter (Security)
 function checkFileType(file, cb) {

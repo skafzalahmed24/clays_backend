@@ -1,6 +1,5 @@
 const asyncHandler = require('express-async-handler');
 const Contact = require('../models/Contact');
-
 const { sendEmail } = require('../utils/emailService');
 
 // @desc    Submit contact form
@@ -32,7 +31,7 @@ const submitContactForm = asyncHandler(async (req, res) => {
             <p><strong>Message:</strong></p>
             <p>${message}</p>
             <br>
-            <p><small>This email was sent from the Mershai website contact form.</small></p>
+            <p><small>This email was sent from the Clarysays website contact form.</small></p>
         `;
 
         try {
@@ -47,7 +46,7 @@ const submitContactForm = asyncHandler(async (req, res) => {
         }
 
         res.status(201).json({
-            _id: contact._id,
+            _id: contact.id,
             message: 'Message sent successfully'
         });
     } else {
@@ -65,11 +64,12 @@ const getContacts = asyncHandler(async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const total = await Contact.countDocuments({});
-        const contacts = await Contact.find({})
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        const total = await Contact.count();
+        const contacts = await Contact.findAll({
+            order: [['createdAt', 'DESC']],
+            offset: skip,
+            limit: limit
+        });
 
         res.json({
             contacts,
@@ -86,7 +86,7 @@ const getContacts = asyncHandler(async (req, res) => {
 // @route   GET /api/contact/:id
 // @access  Private/Admin
 const getContactById = asyncHandler(async (req, res) => {
-    const contact = await Contact.findById(req.params.id);
+    const contact = await Contact.findByPk(req.params.id);
 
     if (contact) {
         // Mark as read if status is New
@@ -105,10 +105,10 @@ const getContactById = asyncHandler(async (req, res) => {
 // @route   DELETE /api/contact/:id
 // @access  Private/Admin
 const deleteContact = asyncHandler(async (req, res) => {
-    const contact = await Contact.findById(req.params.id);
+    const contact = await Contact.findByPk(req.params.id);
 
     if (contact) {
-        await contact.deleteOne();
+        await contact.destroy();
         res.json({ message: 'Message removed' });
     } else {
         res.status(404);

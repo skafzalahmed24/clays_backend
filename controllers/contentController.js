@@ -9,11 +9,11 @@ const FAQ = require('../models/FAQ');
 const GeneralSetting = require('../models/GeneralSetting');
 const Page = require('../models/Page');
 const MegaMenu = require('../models/MegaMenu');
+const { successResponse } = require('../utils/responseHelper');
 
 // Helper to delete file
 const deleteFile = (filePath) => {
   if (!filePath) return;
-  // filePath comes as "/uploads/media-..." from DB
   const absolutePath = path.join(__dirname, '..', filePath);
   fs.unlink(absolutePath, (err) => {
     if (err) console.error(`Failed to delete file: ${absolutePath}`, err);
@@ -25,7 +25,10 @@ const deleteFile = (filePath) => {
 // @access  Public
 const getHeroSlides = async (req, res) => {
   try {
-    const slides = await HeroSlide.find({ isActive: true }).sort({ order: 1 });
+    const slides = await HeroSlide.findAll({
+      where: { isActive: true },
+      order: [['order', 'ASC']]
+    });
     res.json(slides);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -39,15 +42,13 @@ const addHeroSlide = async (req, res) => {
   const { title, subtitle, media, link, order } = req.body;
 
   try {
-    const slide = new HeroSlide({
+    const createdSlide = await HeroSlide.create({
       title,
       subtitle,
       media,
       link,
       order,
     });
-
-    const createdSlide = await slide.save();
     res.status(201).json(createdSlide);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -59,11 +60,11 @@ const addHeroSlide = async (req, res) => {
 // @access  Private/Admin
 const deleteHeroSlide = async (req, res) => {
   try {
-    const slide = await HeroSlide.findById(req.params.id);
+    const slide = await HeroSlide.findByPk(req.params.id);
 
     if (slide) {
       if (slide.media) deleteFile(slide.media);
-      await slide.deleteOne();
+      await slide.destroy();
       res.json({ message: 'Slide removed' });
     } else {
       res.status(404).json({ message: 'Slide not found' });
@@ -73,7 +74,6 @@ const deleteHeroSlide = async (req, res) => {
   }
 };
 
-
 // @desc    Update a hero slide
 // @route   PUT /api/content/hero/:id
 // @access  Private/Admin
@@ -81,10 +81,9 @@ const updateHeroSlide = async (req, res) => {
   const { title, subtitle, media, link, order, isActive } = req.body;
 
   try {
-    const slide = await HeroSlide.findById(req.params.id);
+    const slide = await HeroSlide.findByPk(req.params.id);
 
     if (slide) {
-      // If a new media is provided and it's different from the old one, delete the old file
       if (media && slide.media && media !== slide.media) {
         deleteFile(slide.media);
       }
@@ -106,13 +105,14 @@ const updateHeroSlide = async (req, res) => {
   }
 };
 
-
 // @desc    Get all testimonials
 // @route   GET /api/content/testimonials
 // @access  Public
 const getTestimonials = async (req, res) => {
   try {
-    const testimonials = await Testimonial.find({ isActive: true });
+    const testimonials = await Testimonial.findAll({
+      where: { isActive: true }
+    });
     res.json(testimonials);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -126,13 +126,11 @@ const addTestimonial = async (req, res) => {
   const { text, author, role } = req.body;
 
   try {
-    const testimonial = new Testimonial({
+    const createdTestimonial = await Testimonial.create({
       text,
       author,
       role,
     });
-
-    const createdTestimonial = await testimonial.save();
     res.status(201).json(createdTestimonial);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -144,10 +142,10 @@ const addTestimonial = async (req, res) => {
 // @access  Private/Admin
 const deleteTestimonial = async (req, res) => {
   try {
-    const testimonial = await Testimonial.findById(req.params.id);
+    const testimonial = await Testimonial.findByPk(req.params.id);
 
     if (testimonial) {
-      await testimonial.deleteOne();
+      await testimonial.destroy();
       res.json({ message: 'Testimonial removed' });
     } else {
       res.status(404).json({ message: 'Testimonial not found' });
@@ -162,7 +160,9 @@ const deleteTestimonial = async (req, res) => {
 // @access  Public
 const getSocialFeed = async (req, res) => {
   try {
-    const posts = await SocialPost.find({ isActive: true });
+    const posts = await SocialPost.findAll({
+      where: { isActive: true }
+    });
     res.json(posts);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -176,13 +176,11 @@ const addSocialPost = async (req, res) => {
   const { media, platform, link } = req.body;
 
   try {
-    const post = new SocialPost({
+    const createdPost = await SocialPost.create({
       media,
       platform,
       link,
     });
-
-    const createdPost = await post.save();
     res.status(201).json(createdPost);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -194,11 +192,11 @@ const addSocialPost = async (req, res) => {
 // @access  Private/Admin
 const deleteSocialPost = async (req, res) => {
   try {
-    const post = await SocialPost.findById(req.params.id);
+    const post = await SocialPost.findByPk(req.params.id);
 
     if (post) {
       if (post.media) deleteFile(post.media);
-      await post.deleteOne();
+      await post.destroy();
       res.json({ message: 'Post removed' });
     } else {
       res.status(404).json({ message: 'Post not found' });
@@ -247,7 +245,10 @@ const updateHeritage = async (req, res) => {
 // @access  Public
 const getTrustBadges = async (req, res) => {
     try {
-        const badges = await TrustBadge.find({ isActive: true }).sort({ order: 1 });
+        const badges = await TrustBadge.findAll({
+          where: { isActive: true },
+          order: [['order', 'ASC']]
+        });
         res.json(badges);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -260,8 +261,7 @@ const getTrustBadges = async (req, res) => {
 const addTrustBadge = async (req, res) => {
     const { text, icon, order } = req.body;
     try {
-        const badge = new TrustBadge({ text, icon, order });
-        const createdBadge = await badge.save();
+        const createdBadge = await TrustBadge.create({ text, icon, order });
         res.status(201).json(createdBadge);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -273,9 +273,9 @@ const addTrustBadge = async (req, res) => {
 // @access  Private/Admin
 const deleteTrustBadge = async (req, res) => {
     try {
-        const badge = await TrustBadge.findById(req.params.id);
+        const badge = await TrustBadge.findByPk(req.params.id);
         if (badge) {
-            await badge.deleteOne();
+            await badge.destroy();
             res.json({ message: 'Badge removed' });
         } else {
             res.status(404).json({ message: 'Badge not found' });
@@ -295,7 +295,10 @@ const deleteTrustBadge = async (req, res) => {
 // @access  Public
 const getFAQs = async (req, res) => {
     try {
-        const faqs = await FAQ.find({ isActive: true }).sort({ order: 1, createdAt: -1 });
+        const faqs = await FAQ.findAll({
+          where: { isActive: true },
+          order: [['order', 'ASC'], ['createdAt', 'DESC']]
+        });
         res.json(faqs);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -308,8 +311,7 @@ const getFAQs = async (req, res) => {
 const addFAQ = async (req, res) => {
     const { question, answer, order } = req.body;
     try {
-        const faq = new FAQ({ question, answer, order });
-        const createdFAQ = await faq.save();
+        const createdFAQ = await FAQ.create({ question, answer, order });
         res.status(201).json(createdFAQ);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -321,9 +323,9 @@ const addFAQ = async (req, res) => {
 // @access  Private/Admin
 const deleteFAQ = async (req, res) => {
     try {
-        const faq = await FAQ.findById(req.params.id);
+        const faq = await FAQ.findByPk(req.params.id);
         if (faq) {
-            await faq.deleteOne();
+            await faq.destroy();
             res.json({ message: 'FAQ removed' });
         } else {
             res.status(404).json({ message: 'FAQ not found' });
@@ -356,11 +358,6 @@ const updateSettings = async (req, res) => {
     try {
         const settings = await GeneralSetting.getSingleton();
         
-        // Update fields if they exist in request body
-        // We use spread/assign or manual check to avoid overwriting with null
-        // Since it's a settings object, we might want to allow partial updates deeply, 
-        // but for now, simple top-level updates.
-        
         if (req.body.storeName) settings.storeName = req.body.storeName;
         if (req.body.supportEmail) settings.supportEmail = req.body.supportEmail;
         if (req.body.contactPhone) settings.contactPhone = req.body.contactPhone;
@@ -368,7 +365,6 @@ const updateSettings = async (req, res) => {
         if (req.body.currency) settings.currency = req.body.currency;
         if (req.body.enableReviews !== undefined) settings.enableReviews = req.body.enableReviews;
         
-        // Deep objects update - simple merge
         if (req.body.address) {
             settings.address = { ...settings.address, ...req.body.address };
         }
@@ -379,7 +375,6 @@ const updateSettings = async (req, res) => {
             settings.socialLinks = { ...settings.socialLinks, ...req.body.socialLinks };
         }
 
-        // Consolidated Settings Updates
         if (req.body.footerLinks) settings.footerLinks = req.body.footerLinks;
         if (req.body.openingHours) settings.openingHours = req.body.openingHours;
         if (req.body.contactSubjects) settings.contactSubjects = req.body.contactSubjects;
@@ -396,17 +391,12 @@ const updateSettings = async (req, res) => {
     }
 };
 
-
-
-const { successResponse } = require('../utils/responseHelper');
-
 // @desc    Get Page by Slug
 // @route   GET /api/content/pages/:slug
 // @access  Public
 const getPage = async (req, res) => {
     try {
-        const page = await Page.findOne({ slug: req.params.slug });
-        // If not found, return null or an empty object structure, don't 404 so frontend can handle graceful fallback
+        const page = await Page.findOne({ where: { slug: req.params.slug } });
         if (!page) {
              return successResponse(res, { slug: req.params.slug, modules: {} });
         }
@@ -423,19 +413,17 @@ const updatePage = async (req, res) => {
     try {
         const { modules, seo } = req.body;
         
-        let page = await Page.findOne({ slug: req.params.slug });
+        let page = await Page.findOne({ where: { slug: req.params.slug } });
 
         if (page) {
             if (modules) {
                 page.modules = modules;
-                page.markModified('modules');
             }
             if (seo) page.seo = seo;
             
             const updatedPage = await page.save();
             res.json(updatedPage);
         } else {
-            // Create if doesn't exist
             page = await Page.create({
                 slug: req.params.slug,
                 modules: modules || {},
@@ -451,8 +439,7 @@ const updatePage = async (req, res) => {
 // --- Mega Menu ---
 const getMegaMenusList = async (req, res) => {
     try {
-        // Return only the menuIds
-        const menus = await MegaMenu.find({}).select('menuId -_id');
+        const menus = await MegaMenu.findAll({ attributes: ['menuId'] });
         res.json(menus.map(m => m.menuId));
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -461,13 +448,9 @@ const getMegaMenusList = async (req, res) => {
 
 const getMegaMenu = async (req, res) => {
     try {
-        const { id } = req.params; // menuId e.g. 'New Arrivals'
-        // Find by menuId not _id
-        let menu = await MegaMenu.findOne({ menuId: id });
+        const { id } = req.params;
+        let menu = await MegaMenu.findOne({ where: { menuId: id } });
         
-        // If not found, return empty structure or null
-        // Optionally, if it doesn't exist, we could return a 404, but for this use case 
-        // returning null lets the frontend fallback to hardcoded data initially.
         if (!menu) {
              return res.status(404).json({ message: 'Menu not found' });
         }
@@ -479,10 +462,10 @@ const getMegaMenu = async (req, res) => {
 
 const updateMegaMenu = async (req, res) => {
     try {
-        const { id } = req.params; // menuId
+        const { id } = req.params;
         const { categories, featured } = req.body;
 
-        let menu = await MegaMenu.findOne({ menuId: id });
+        let menu = await MegaMenu.findOne({ where: { menuId: id } });
 
         if (menu) {
             menu.categories = categories || menu.categories;
@@ -490,7 +473,6 @@ const updateMegaMenu = async (req, res) => {
             const updatedMenu = await menu.save();
             res.json(updatedMenu);
         } else {
-            // Create new if doesn't exist
             const newMenu = await MegaMenu.create({
                 menuId: id,
                 categories,
@@ -519,17 +501,13 @@ module.exports = {
   getTrustBadges,
   addTrustBadge,
   deleteTrustBadge,
-  // FAQ
   getFAQs,
   addFAQ,
   deleteFAQ,
-  // Settings
   getSettings,
   updateSettings,
-  // Pages
   getPage,
   updatePage,
-  // Mega Menu
   getMegaMenusList,
   getMegaMenu,
   updateMegaMenu

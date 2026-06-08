@@ -1,40 +1,57 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const contactSchema = mongoose.Schema(
-    {
-        firstName: {
-            type: String,
-            required: [true, 'Please add a first name'],
-        },
-        lastName: {
-            type: String,
-            required: [true, 'Please add a last name'],
-        },
-        email: {
-            type: String,
-            required: [true, 'Please add an email'],
-            match: [
-                /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-                'Please add a valid email',
-            ],
-        },
-        subject: {
-            type: String,
-            required: [true, 'Please select a subject'],
-        },
-        message: {
-            type: String,
-            required: [true, 'Please add a message'],
-        },
-        status: {
-            type: String,
-            enum: ['New', 'Read', 'Replied'],
-            default: 'New',
-        }
+const Contact = sequelize.define('Contact', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
     },
-    {
-        timestamps: true,
-    }
-);
+    firstName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    lastName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+            isEmail: true,
+        },
+    },
+    subject: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    message: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    status: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'New',
+        validate: {
+            isIn: [['New', 'Read', 'Replied']],
+        },
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
+}, {
+    timestamps: true,
+});
 
-module.exports = mongoose.model('Contact', contactSchema);
+Contact.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
+
+module.exports = Contact;

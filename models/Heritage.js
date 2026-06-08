@@ -1,30 +1,63 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const heritageSchema = mongoose.Schema({
-    title: { type: String, required: true },
-    subtitle: { type: String, required: true }, // e.g., "since 1985"
-    description: { type: String, required: true },
-    image: { type: String, required: true }, // URL path
-    link: { type: String, default: '/about' },
-    linkText: { type: String, default: 'Read Our Story' },
+const Heritage = sequelize.define('Heritage', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    title: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    subtitle: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    image: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    link: {
+        type: DataTypes.STRING,
+        defaultValue: '/about',
+    },
+    linkText: {
+        type: DataTypes.STRING,
+        defaultValue: 'Read Our Story',
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
     timestamps: true,
 });
 
-// Optimization: Ensure there is only one Heritage document
-heritageSchema.statics.getSingleton = async function () {
+// Singleton helper static method
+Heritage.getSingleton = async function () {
     const doc = await this.findOne();
     if (doc) return doc;
-    // Default initial content
     return await this.create({
         title: "Mastery in Every Cut",
         subtitle: "Since 1985",
         description: "Our heritage is built on a foundation of uncompromised quality and artistic vision. Every piece of propert jewelry tells a story of tradition, passion, and the pursuit of perfection.",
-        image: "/uploads/story.png", // specific placeholder or ensure frontend handles missing
+        image: "/uploads/story.png",
         link: "/about"
     });
 };
 
-const Heritage = mongoose.model('Heritage', heritageSchema);
+Heritage.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
 
 module.exports = Heritage;

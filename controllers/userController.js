@@ -1,14 +1,42 @@
 const User = require('../models/User');
+const Product = require('../models/Product');
+const Order = require('../models/Order');
 const { generateAccessToken } = require('../utils/generateToken');
 const { successResponse } = require('../utils/responseHelper');
+const { sequelize } = require('../config/db');
+const { Op } = require('sequelize');
+const crypto = require('crypto');
+
+// Helper to populate cart
+const populateUserCart = async (user) => {
+    if (!user) return [];
+    const cart = user.cart || [];
+    const productIds = cart.map(item => item.product).filter(Boolean);
+    const products = await Product.findAll({ where: { id: productIds } });
+    const productMap = new Map(products.map(p => [p.id, p]));
+    
+    return cart.map(item => ({
+        product: productMap.get(item.product) || null,
+        qty: item.qty
+    })).filter(item => item.product !== null);
+};
+
+// Helper to populate wishlist
+const populateUserWishlist = async (user) => {
+    if (!user) return [];
+    const wishlist = user.wishlist || [];
+    const products = await Product.findAll({ where: { id: wishlist } });
+    return products;
+};
 
 // @desc    Get user cart
 // @route   GET /api/users/cart
 // @access  Private
 const getCart = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).populate('cart.product');
-        successResponse(res, user.cart);
+        const user = await User.findByPk(req.user.id);
+        const populatedCart = await populateUserCart(user);
+        successResponse(res, populatedCart);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -21,28 +49,26 @@ const addToCart = async (req, res) => {
     const { productId, qty } = req.body;
 
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findByPk(req.user.id);
+        const cart = user.cart || [];
         
         // Check if item already exists in cart
-        const itemIndex = user.cart.findIndex(item => item.product && item.product.toString() === productId);
+        const itemIndex = cart.findIndex(item => item.product && item.product.toString() === productId);
 
         if (itemIndex > -1) {
-            // Update quantity
-            user.cart[itemIndex].qty += Number(qty) || 1;
+            cart[itemIndex].qty += Number(qty) || 1;
         } else {
-            // Check if cart limit exceeded
-            if (user.cart.length >= 50) {
+            if (cart.length >= 50) {
                  return res.status(400).json({ message: 'Cart is full (limit: 50 items). Please remove items to add more.' });
             }
-            // Add new item
-            user.cart.push({ product: productId, qty: Number(qty) || 1 });
+            cart.push({ product: productId, qty: Number(qty) || 1 });
         }
 
+        user.cart = [...cart]; // Trigger Sequelize change detection
         await user.save();
         
-        // Return full cart with product details
-        const updatedUser = await User.findById(req.user._id).populate('cart.product');
-        successResponse(res, updatedUser.cart);
+        const populatedCart = await populateUserCart(user);
+        successResponse(res, populatedCart);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -53,14 +79,14 @@ const addToCart = async (req, res) => {
 // @access  Private
 const removeFromCart = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findByPk(req.user.id);
+        const cart = user.cart || [];
         
-        user.cart = user.cart.filter(item => item.product && item.product.toString() !== req.params.productId);
-        
+        user.cart = cart.filter(item => item.product && item.product.toString() !== req.params.productId);
         await user.save();
         
-        const updatedUser = await User.findById(req.user._id).populate('cart.product');
-        successResponse(res, updatedUser.cart);
+        const populatedCart = await populateUserCart(user);
+        successResponse(res, populatedCart);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -71,8 +97,9 @@ const removeFromCart = async (req, res) => {
 // @access  Private
 const getWishlist = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).populate('wishlist');
-        successResponse(res, user.wishlist);
+        const user = await User.findByPk(req.user.id);
+        const populatedWishlist = await populateUserWishlist(user);
+        successResponse(res, populatedWishlist);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -85,22 +112,22 @@ const addToWishlist = async (req, res) => {
     const { productId } = req.body;
 
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findByPk(req.user.id);
+        const wishlist = user.wishlist || [];
         
-        // Check if already in wishlist (convert ObjectId to string for comparison)
-        const isAlreadyAdded = user.wishlist.some(id => id.toString() === productId);
+        const isAlreadyAdded = wishlist.some(id => id.toString() === productId);
 
         if (!isAlreadyAdded) {
-            // Check if wishlist limit exceeded
-            if (user.wishlist.length >= 100) {
+            if (wishlist.length >= 100) {
                 return res.status(400).json({ message: 'Wishlist is full (limit: 100 items).' });
             }
-            user.wishlist.push(productId);
+            wishlist.push(productId);
+            user.wishlist = [...wishlist];
             await user.save();
         }
 
-        const updatedUser = await User.findById(req.user._id).populate('wishlist');
-        successResponse(res, updatedUser.wishlist);
+        const populatedWishlist = await populateUserWishlist(user);
+        successResponse(res, populatedWishlist);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -111,14 +138,14 @@ const addToWishlist = async (req, res) => {
 // @access  Private
 const removeFromWishlist = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findByPk(req.user.id);
+        const wishlist = user.wishlist || [];
         
-        user.wishlist = user.wishlist.filter(id => id && id.toString() !== req.params.productId);
-        
+        user.wishlist = wishlist.filter(id => id && id.toString() !== req.params.productId);
         await user.save();
         
-        const updatedUser = await User.findById(req.user._id).populate('wishlist');
-        successResponse(res, updatedUser.wishlist);
+        const populatedWishlist = await populateUserWishlist(user);
+        successResponse(res, populatedWishlist);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -129,7 +156,7 @@ const removeFromWishlist = async (req, res) => {
 // @access  Private
 const updateUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findByPk(req.user.id);
 
         if (user) {
             user.name = req.body.name || user.name;
@@ -140,11 +167,11 @@ const updateUserProfile = async (req, res) => {
             const updatedUser = await user.save();
 
             successResponse(res, {
-                _id: updatedUser._id,
+                _id: updatedUser.id,
                 name: updatedUser.name,
                 email: updatedUser.email,
-                isAdmin: updatedUser.isAdmin,
-                token: generateAccessToken(updatedUser._id),
+                isAdmin: updatedUser.role === 'admin',
+                token: generateAccessToken(updatedUser.id),
             });
         } else {
             res.status(404).json({ message: 'User not found' });
@@ -159,20 +186,28 @@ const updateUserProfile = async (req, res) => {
 // @access  Private/Admin
 const getUserById = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select('-password');
+        const user = await User.findByPk(req.params.id, {
+            attributes: { exclude: ['password'] }
+        });
         
         if (user) {
-            // Also fetch basic order stats
-             const orders = await require('../models/Order').find({ user: user._id }).sort({ createdAt: -1 });
+             const orders = await Order.findAll({
+                 where: { userId: user.id },
+                 order: [['createdAt', 'DESC']]
+             });
              
              const totalOrders = orders.length;
              const totalSpent = orders.reduce((acc, order) => acc + (order.totalPrice || 0), 0);
 
-            successResponse(res, {
-                ...user.toObject(),
-                orders: orders,
-                totalOrders,
-                totalSpent
+            res.json({
+                status: 1,
+                message: 'success',
+                data: {
+                    ...user.toJSON(),
+                    orders: orders,
+                    totalOrders,
+                    totalSpent
+                }
             });
         } else {
             res.status(404).json({ message: 'User not found' });
@@ -191,48 +226,48 @@ const getUsers = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const keyword = req.query.search
-            ? {
-                $or: [
-                    { name: { $regex: req.query.search, $options: 'i' } },
-                    { email: { $regex: req.query.search, $options: 'i' } },
-                    { 'addresses.phone': { $regex: req.query.search, $options: 'i' } },
-                ],
-            }
-            : {};
+        const whereClause = {};
+        if (req.query.search) {
+            const searchVal = `%${req.query.search}%`;
+            whereClause[Op.or] = [
+                { name: { [Op.iLike]: searchVal } },
+                { email: { [Op.iLike]: searchVal } },
+                sequelize.literal(`CAST("User"."addresses" AS VARCHAR) ILIKE '${searchVal}'`)
+            ];
+        }
 
-        // 1. Get total count first (for pagination)
-        const total = await User.countDocuments({ ...keyword });
+        const total = await User.count({ where: whereClause });
 
-        // 2. Aggregation Pipeline
-        const users = await User.aggregate([
-            { $match: { ...keyword } }, // Apply search filter
-            {
-                $lookup: {
-                    from: 'orders',
-                    localField: '_id',
-                    foreignField: 'user',
-                    as: 'orders'
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    name: 1,
-                    email: 1,
-                    isAdmin: 1,
-                    createdAt: 1,
-                    totalOrders: { $size: '$orders' },
-                    totalSpent: { $sum: '$orders.totalPrice' }
-                }
-            },
-            { $sort: { createdAt: -1 } },
-            { $skip: skip },
-            { $limit: limit }
-        ]);
+        const users = await User.findAll({
+            where: whereClause,
+            attributes: [
+                'id',
+                'name',
+                'email',
+                [sequelize.literal("CASE WHEN \"User\".\"role\" = 'admin' THEN true ELSE false END"), 'isAdmin'],
+                'createdAt',
+                [sequelize.literal('(SELECT COUNT(*) FROM "Orders" WHERE "Orders"."userId" = "User"."id")'), 'totalOrders'],
+                [sequelize.literal('(SELECT COALESCE(SUM("Orders"."totalPrice"), 0) FROM "Orders" WHERE "Orders"."userId" = "User"."id")'), 'totalSpent']
+            ],
+            order: [['createdAt', 'DESC']],
+            limit: limit,
+            offset: skip,
+            raw: true
+        });
+
+        const formattedUsers = users.map(u => ({
+            _id: u.id,
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            isAdmin: u.isAdmin,
+            createdAt: u.createdAt,
+            totalOrders: parseInt(u.totalOrders || 0),
+            totalSpent: parseFloat(u.totalSpent || 0)
+        }));
 
         successResponse(res, {
-            users,
+            users: formattedUsers,
             page,
             pages: Math.ceil(total / limit),
             total
@@ -247,7 +282,7 @@ const getUsers = async (req, res) => {
 // @access  Private
 const getUserAddresses = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).select('addresses');
+        const user = await User.findByPk(req.user.id, { attributes: ['addresses'] });
         successResponse(res, user.addresses || []);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -261,17 +296,19 @@ const addUserAddress = async (req, res) => {
     const { firstName, lastName, email, phone, address, apartment, city, postalCode, isDefault } = req.body;
 
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findByPk(req.user.id);
+        const addresses = user.addresses || [];
 
-        // If this is set as default, unset other default addresses
         if (isDefault) {
-            user.addresses.forEach(addr => addr.isDefault = false);
+            addresses.forEach(addr => addr.isDefault = false);
         }
 
-        // If this is the first address, make it default
-        const makeDefault = user.addresses.length === 0 || isDefault;
+        const makeDefault = addresses.length === 0 || isDefault;
+        const addressId = crypto.randomUUID();
 
-        user.addresses.push({
+        addresses.push({
+            id: addressId,
+            _id: addressId,
             firstName,
             lastName,
             email,
@@ -283,6 +320,7 @@ const addUserAddress = async (req, res) => {
             isDefault: makeDefault
         });
 
+        user.addresses = [...addresses];
         await user.save();
         successResponse(res, user.addresses);
     } catch (error) {
@@ -297,19 +335,18 @@ const updateUserAddress = async (req, res) => {
     const { firstName, lastName, email, phone, address, apartment, city, postalCode, isDefault } = req.body;
 
     try {
-        const user = await User.findById(req.user._id);
-        const addressToUpdate = user.addresses.id(req.params.addressId);
+        const user = await User.findByPk(req.user.id);
+        const addresses = user.addresses || [];
+        const addressToUpdate = addresses.find(addr => addr.id === req.params.addressId || addr._id === req.params.addressId);
 
         if (!addressToUpdate) {
             return res.status(404).json({ message: 'Address not found' });
         }
 
-        // If setting this as default, unset others
         if (isDefault && !addressToUpdate.isDefault) {
-            user.addresses.forEach(addr => addr.isDefault = false);
+            addresses.forEach(addr => addr.isDefault = false);
         }
 
-        // Update fields
         if (firstName) addressToUpdate.firstName = firstName;
         if (lastName) addressToUpdate.lastName = lastName;
         if (email) addressToUpdate.email = email;
@@ -320,6 +357,7 @@ const updateUserAddress = async (req, res) => {
         if (postalCode) addressToUpdate.postalCode = postalCode;
         if (isDefault !== undefined) addressToUpdate.isDefault = isDefault;
 
+        user.addresses = [...addresses];
         await user.save();
         successResponse(res, user.addresses);
     } catch (error) {
@@ -332,8 +370,9 @@ const updateUserAddress = async (req, res) => {
 // @access  Private
 const deleteUserAddress = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
-        const addressToDelete = user.addresses.id(req.params.addressId);
+        const user = await User.findByPk(req.user.id);
+        let addresses = user.addresses || [];
+        const addressToDelete = addresses.find(addr => addr.id === req.params.addressId || addr._id === req.params.addressId);
 
         if (!addressToDelete) {
             return res.status(404).json({ message: 'Address not found' });
@@ -341,14 +380,13 @@ const deleteUserAddress = async (req, res) => {
 
         const wasDefault = addressToDelete.isDefault;
         
-        // Use pull() instead of remove()
-        user.addresses.pull(req.params.addressId);
+        addresses = addresses.filter(addr => addr.id !== req.params.addressId && addr._id !== req.params.addressId);
 
-        // If deleted address was default and there are other addresses, make the first one default
-        if (wasDefault && user.addresses.length > 0) {
-            user.addresses[0].isDefault = true;
+        if (wasDefault && addresses.length > 0) {
+            addresses[0].isDefault = true;
         }
 
+        user.addresses = [...addresses];
         await user.save();
         successResponse(res, user.addresses);
     } catch (error) {
@@ -361,17 +399,18 @@ const deleteUserAddress = async (req, res) => {
 // @access  Private
 const setDefaultAddress = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
-        const addressToSetDefault = user.addresses.id(req.params.addressId);
+        const user = await User.findByPk(req.user.id);
+        const addresses = user.addresses || [];
+        const addressToSetDefault = addresses.find(addr => addr.id === req.params.addressId || addr._id === req.params.addressId);
 
         if (!addressToSetDefault) {
             return res.status(404).json({ message: 'Address not found' });
         }
 
-        // Unset all defaults, then set this one
-        user.addresses.forEach(addr => addr.isDefault = false);
+        addresses.forEach(addr => addr.isDefault = false);
         addressToSetDefault.isDefault = true;
 
+        user.addresses = [...addresses];
         await user.save();
         successResponse(res, user.addresses);
     } catch (error) {

@@ -12,7 +12,7 @@ const sendEmail = async (options) => {
 
     // 2. Define email options
     const mailOptions = {
-        from: `Mershai <${process.env.EMAIL_USERNAME}>`,
+        from: `Clarysays <${process.env.EMAIL_USERNAME}>`,
         to: options.email,
         subject: options.subject,
         html: options.message
@@ -87,7 +87,7 @@ const sendOrderEmail = async (order, user) => {
             </div>
 
             <p style="text-align: center; margin-top: 30px; font-size: 12px; color: #888;">
-                &copy; ${new Date().getFullYear()} Mershai. All rights reserved.
+                &copy; ${new Date().getFullYear()} Clarysays. All rights reserved.
             </p>
         </div>
     `;
@@ -116,7 +116,7 @@ const sendOrderStatusEmail = async (order, user) => {
                 <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/account" style="background: #D4AF37; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px;">View Order</a>
             </div>
              <p style="text-align: center; margin-top: 30px; font-size: 12px; color: #888;">
-                &copy; ${new Date().getFullYear()} Mershai. All rights reserved.
+                &copy; ${new Date().getFullYear()} Clarysays. All rights reserved.
             </p>
         </div>
     `;

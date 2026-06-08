@@ -5,7 +5,7 @@ const Category = require('../models/Category');
 // @access  Public
 const getCategories = async (req, res) => {
     try {
-        const categories = await Category.find({});
+        const categories = await Category.findAll();
         res.status(200).json(categories);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -19,7 +19,7 @@ const createCategory = async (req, res) => {
     const { name, img, description } = req.body;
 
     try {
-        const categoryExists = await Category.findOne({ name });
+        const categoryExists = await Category.findOne({ where: { name } });
 
         if (categoryExists) {
             return res.status(400).json({ message: 'Category already exists' });
@@ -42,13 +42,13 @@ const createCategory = async (req, res) => {
 // @access  Private/Admin
 const deleteCategory = async (req, res) => {
     try {
-        const category = await Category.findById(req.params.id);
+        const category = await Category.findByPk(req.params.id);
 
         if (!category) {
             return res.status(404).json({ message: 'Category not found' });
         }
 
-        await category.deleteOne();
+        await category.destroy();
         res.status(200).json({ id: req.params.id, message: 'Category removed' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -60,17 +60,14 @@ const deleteCategory = async (req, res) => {
 // @access  Private/Admin
 const updateCategory = async (req, res) => {
     try {
-        const category = await Category.findById(req.params.id);
+        const category = await Category.findByPk(req.params.id);
 
         if (!category) {
             return res.status(404).json({ message: 'Category not found' });
         }
 
-        const updatedCategory = await Category.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+        await Category.update(req.body, { where: { id: req.params.id } });
+        const updatedCategory = await Category.findByPk(req.params.id);
 
         res.status(200).json(updatedCategory);
     } catch (error) {

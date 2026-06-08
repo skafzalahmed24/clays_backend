@@ -1,34 +1,50 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const blogSchema = mongoose.Schema({
+const Blog = sequelize.define('Blog', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
     title: {
-        type: String,
-        required: true,
+        type: DataTypes.STRING,
+        allowNull: false,
     },
     excerpt: {
-        type: String,
-        required: true,
+        type: DataTypes.TEXT,
+        allowNull: false,
     },
     content: {
-        type: String,
-        required: true,
+        type: DataTypes.TEXT,
+        allowNull: false,
     },
     image: {
-        type: String,
-        required: true,
+        type: DataTypes.STRING,
+        allowNull: false,
     },
     category: {
-        type: String,
-        required: true,
+        type: DataTypes.STRING,
+        allowNull: false,
     },
     author: {
-        type: String,
-        default: 'Admin'
-    }
+        type: DataTypes.STRING,
+        defaultValue: 'Admin',
+    },
+    _id: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.id;
+        },
+    },
 }, {
-    timestamps: true
+    timestamps: true,
 });
 
-const Blog = mongoose.model('Blog', blogSchema);
+Blog.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+};
 
 module.exports = Blog;

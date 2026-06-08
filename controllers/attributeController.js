@@ -5,7 +5,7 @@ const Attribute = require('../models/Attribute');
 // @route   GET /api/attributes
 // @access  Public
 const getAttributes = asyncHandler(async (req, res) => {
-    const attributes = await Attribute.find({});
+    const attributes = await Attribute.findAll();
     
     // Group by type for easier frontend consumption
     const grouped = attributes.reduce((acc, curr) => {
@@ -13,14 +13,14 @@ const getAttributes = asyncHandler(async (req, res) => {
             acc[curr.type] = [];
         }
         if (curr.type === 'colors') {
-                acc[curr.type].push({ id: curr._id, name: curr.name, hex: curr.value });
+                acc[curr.type].push({ id: curr.id, name: curr.name, hex: curr.value });
         } else if (curr.type === 'categories') {
-                acc[curr.type].push({ id: curr._id, name: curr.name, img: curr.img });
+                acc[curr.type].push({ id: curr.id, name: curr.name, img: curr.img });
         } else if (curr.type === 'collections') {
-                acc[curr.type].push({ id: curr._id, name: curr.name, description: curr.value, img: curr.img });
+                acc[curr.type].push({ id: curr.id, name: curr.name, description: curr.value, img: curr.img });
         } else {
                 // For all other types (materials, occasions, subCategories), return object with ID
-                acc[curr.type].push({ id: curr._id, name: curr.name, value: curr.value });
+                acc[curr.type].push({ id: curr.id, name: curr.name, value: curr.value });
         }
         return acc;
     }, {});
@@ -47,10 +47,10 @@ const addAttribute = asyncHandler(async (req, res) => {
 // @route   DELETE /api/attributes/:id
 // @access  Private/Admin
 const deleteAttribute = asyncHandler(async (req, res) => {
-    const attribute = await Attribute.findById(req.params.id);
+    const attribute = await Attribute.findByPk(req.params.id);
 
     if (attribute) {
-        await attribute.deleteOne();
+        await attribute.destroy();
         res.json({ message: 'Attribute removed' });
     } else {
         res.status(404);
@@ -62,7 +62,7 @@ const deleteAttribute = asyncHandler(async (req, res) => {
 // @route   PUT /api/attributes/:id
 // @access  Private/Admin
 const updateAttribute = asyncHandler(async (req, res) => {
-    const attribute = await Attribute.findById(req.params.id);
+    const attribute = await Attribute.findByPk(req.params.id);
 
     if (attribute) {
         attribute.name = req.body.name || attribute.name;
