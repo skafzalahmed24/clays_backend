@@ -6,6 +6,13 @@ const { protectAdmin } = require('../middleware/authMiddleware');
 router.post('/', protectAdmin, upload.single('file'), (req, res) => {
     let imageUrl;
 
+    if (!req.file) {
+        return res.status(400).json({
+            status: 0,
+            message: 'No file uploaded or file type not allowed'
+        });
+    }
+
     if (req.file.location) {
         // Return S3/MinIO URL
         imageUrl = req.file.location;
