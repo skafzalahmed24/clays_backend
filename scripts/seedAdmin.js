@@ -7,7 +7,7 @@ const seedAdmin = async () => {
         await connectDB();
         
         // Check if admin already exists
-        const adminExists = await Admin.findOne({ where: { email: 'admin@Clarysays.com' } });
+        const adminExists = await Admin.findOne({ where: { email: 'admin@clarysays.com' } });
         if (adminExists) {
             console.log('Admin user already exists.');
             process.exit(0);
@@ -16,7 +16,7 @@ const seedAdmin = async () => {
         // Create default admin
         await Admin.create({
             name: 'Clarysays Admin',
-            email: 'admin@Clarysays.com',
+            email: 'admin@clarysays.com',
             password: 'adminpassword123', // This will be hashed automatically by the model's beforeSave hook
             role: 'admin',
             permissions: ['all']
@@ -24,7 +24,7 @@ const seedAdmin = async () => {
 
         console.log('--------------------------------------------------');
         console.log('Admin user seeded successfully!');
-        console.log('Email: admin@Clarysays.com');
+        console.log('Email: admin@clarysays.com');
         console.log('Password: adminpassword123');
         console.log('--------------------------------------------------');
         process.exit(0);

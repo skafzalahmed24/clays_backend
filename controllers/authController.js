@@ -23,7 +23,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // Check if user exists
-    const userExists = await User.findOne({ where: { email } });
+    const userExists = await User.findOne({ where: { email: email ? email.toLowerCase() : '' } });
 
     if (userExists) {
         res.status(400);
@@ -81,7 +81,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
     // Check for user email
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: email ? email.toLowerCase() : '' } });
 
     if (user && (await user.matchPassword(password))) {
         if (!user.isVerified) {
@@ -132,7 +132,7 @@ const loginUser = asyncHandler(async (req, res) => {
 const verifyOTP = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: email ? email.toLowerCase() : '' } });
 
     if (!user) {
         res.status(400);
@@ -172,7 +172,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
 // @access  Public
 const resendOTP = asyncHandler(async (req, res) => {
     const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: email ? email.toLowerCase() : '' } });
 
     if (!user) {
         res.status(404);
@@ -208,7 +208,7 @@ const resendOTP = asyncHandler(async (req, res) => {
 // @access  Public
 const forgotPassword = asyncHandler(async (req, res) => {
     const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: email ? email.toLowerCase() : '' } });
 
     if (!user) {
         res.status(404);
@@ -248,7 +248,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 // @access  Public
 const resetPassword = asyncHandler(async (req, res) => {
     const { email, otp, password } = req.body;
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: email ? email.toLowerCase() : '' } });
 
     if (!user) {
         res.status(404);

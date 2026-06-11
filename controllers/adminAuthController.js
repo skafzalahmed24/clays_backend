@@ -10,7 +10,7 @@ const loginAdmin = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const admin = await Admin.findOne({ where: { email } });
+        const admin = await Admin.findOne({ where: { email: email ? email.toLowerCase() : '' } });
 
         if (admin && (await admin.matchPassword(password))) {
             // Generate Refresh Token
@@ -39,7 +39,7 @@ const registerAdmin = async (req, res) => {
     const { name, email, password } = req.body;
 
     try {
-        const adminExists = await Admin.findOne({ where: { email } });
+        const adminExists = await Admin.findOne({ where: { email: email ? email.toLowerCase() : '' } });
 
         if (adminExists) {
             res.status(400);
@@ -122,7 +122,7 @@ const forgotPasswordAdmin = async (req, res) => {
     const { email } = req.body;
 
     try {
-        const admin = await Admin.findOne({ where: { email } });
+        const admin = await Admin.findOne({ where: { email: email ? email.toLowerCase() : '' } });
 
         if (!admin) {
             res.status(404).json({ message: 'Admin not found' });
@@ -168,7 +168,7 @@ const resetPasswordAdmin = async (req, res) => {
     try {
         const admin = await Admin.findOne({
             where: {
-                email,
+                email: email ? email.toLowerCase() : '',
                 otp,
                 otpExpires: { [Op.gt]: new Date() },
             }
