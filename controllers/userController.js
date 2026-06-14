@@ -65,6 +65,7 @@ const addToCart = async (req, res) => {
         }
 
         user.cart = [...cart]; // Trigger Sequelize change detection
+        user.changed('cart', true);
         await user.save();
         
         const populatedCart = await populateUserCart(user);
@@ -83,6 +84,7 @@ const removeFromCart = async (req, res) => {
         const cart = user.cart || [];
         
         user.cart = cart.filter(item => item.product && item.product.toString() !== req.params.productId);
+        user.changed('cart', true);
         await user.save();
         
         const populatedCart = await populateUserCart(user);
@@ -123,6 +125,7 @@ const addToWishlist = async (req, res) => {
             }
             wishlist.push(productId);
             user.wishlist = [...wishlist];
+            user.changed('wishlist', true);
             await user.save();
         }
 
@@ -142,6 +145,7 @@ const removeFromWishlist = async (req, res) => {
         const wishlist = user.wishlist || [];
         
         user.wishlist = wishlist.filter(id => id && id.toString() !== req.params.productId);
+        user.changed('wishlist', true);
         await user.save();
         
         const populatedWishlist = await populateUserWishlist(user);
@@ -321,6 +325,7 @@ const addUserAddress = async (req, res) => {
         });
 
         user.addresses = [...addresses];
+        user.changed('addresses', true);
         await user.save();
         successResponse(res, user.addresses);
     } catch (error) {
@@ -358,6 +363,7 @@ const updateUserAddress = async (req, res) => {
         if (isDefault !== undefined) addressToUpdate.isDefault = isDefault;
 
         user.addresses = [...addresses];
+        user.changed('addresses', true);
         await user.save();
         successResponse(res, user.addresses);
     } catch (error) {
@@ -387,6 +393,7 @@ const deleteUserAddress = async (req, res) => {
         }
 
         user.addresses = [...addresses];
+        user.changed('addresses', true);
         await user.save();
         successResponse(res, user.addresses);
     } catch (error) {
@@ -411,6 +418,7 @@ const setDefaultAddress = async (req, res) => {
         addressToSetDefault.isDefault = true;
 
         user.addresses = [...addresses];
+        user.changed('addresses', true);
         await user.save();
         successResponse(res, user.addresses);
     } catch (error) {

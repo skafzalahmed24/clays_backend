@@ -48,13 +48,13 @@ const protectAdmin = async (req, res, next) => {
         try {
             token = req.headers.authorization.split(' ')[1];
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            
+
             // Check Admin collection specificially
             const Admin = require('../models/Admin');
             req.user = await Admin.findByPk(decoded.id, { attributes: { exclude: ['password'] } });
 
             if (!req.user) {
-                 return res.status(401).json({ message: 'Not authorized, admin not found' });
+                return res.status(401).json({ message: 'Not authorized, admin not found' });
             }
 
             next();
@@ -88,12 +88,12 @@ const protectPublic = async (req, res, next) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = await User.findByPk(decoded.id, { attributes: { exclude: ['password'] } });
-             if (!req.user) {
-                  // Try Admin if user not found (admins should also be able to view public data)
-                  const Admin = require('../models/Admin');
-                  req.user = await Admin.findByPk(decoded.id, { attributes: { exclude: ['password'] } });
+            if (!req.user) {
+                // Try Admin if user not found (admins should also be able to view public data)
+                const Admin = require('../models/Admin');
+                req.user = await Admin.findByPk(decoded.id, { attributes: { exclude: ['password'] } });
             }
-             
+
             if (req.user) {
                 return next();
             }
@@ -103,12 +103,9 @@ const protectPublic = async (req, res, next) => {
         }
     }
 
-    if (!token) {
-        return res.status(401).json({ message: 'Not authorized, no token' });
-    }
-    
-    // If we have a token but it failed both checks
-    return res.status(401).json({ message: 'Not authorized, invalid token' });
+    // Since this is a public endpoint, let the request proceed even if there is no valid token
+    req.user = req.user || { role: 'guest' };
+    return next();
 };
 
 module.exports = { protect, admin, protectAdmin, protectPublic };
