@@ -452,8 +452,38 @@ const getMegaMenu = async (req, res) => {
         let menu = await MegaMenu.findOne({ where: { menuId: id } });
         
         if (!menu) {
-             return res.status(404).json({ message: 'Menu not found' });
+             // Create a virtual menu if not found
+             menu = { menuId: id, categories: [], featured: {} };
+        } else {
+             // Convert to plain object if it's a Sequelize instance
+             menu = menu.toJSON();
         }
+
+        // Dynamically fetch subcategories from Attribute table to stay synced with Admin panel
+        const Attribute = require('../models/Attribute');
+        const subCategories = await Attribute.findAll({
+             where: { type: 'subCategories', value: id }
+        });
+
+        if (subCategories && subCategories.length > 0) {
+             menu.categories = subCategories.map(sub => ({
+                 name: sub.name,
+                 link: `/category/${encodeURIComponent(id)}/${encodeURIComponent(sub.name)}`,
+                 image: sub.img || '/placeholder.png'
+             }));
+        }
+
+        // Fetch up to 4 featured products for this parent category
+        const Product = require('../models/Product');
+        const featuredProducts = await Product.findAll({
+            where: { category: id, isFeatured: true },
+            limit: 4
+        });
+        
+        console.log("Featured Products for", id, featuredProducts.length);
+        
+        menu.featuredProducts = featuredProducts;
+
         res.json(menu);
     } catch (error) {
         res.status(500).json({ message: error.message });

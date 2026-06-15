@@ -22,7 +22,10 @@ const {
   getSettings,
   updateSettings,
   getPage,
-  updatePage
+  updatePage,
+  getMegaMenusList,
+  getMegaMenu,
+  updateMegaMenu
 } = require('../controllers/contentController');
 const { admin, protectAdmin, protectPublic } = require('../middleware/authMiddleware');
 
@@ -49,7 +52,7 @@ router.route('/settings').get(protectPublic, getSettings).put(protectAdmin, admi
 
 router.route('/pages/:slug').get(protectPublic, getPage).put(protectAdmin, admin, updatePage);
 
-// router.route('/mega-menu').get(protectPublic, getMegaMenusList);
-// router.route('/mega-menu/:id').get(protectPublic, getMegaMenu).put(protectAdmin, admin, updateMegaMenu);
+router.route('/mega-menu').get(protectPublic, getMegaMenusList);
+router.route('/mega-menu/:id').get(protectPublic, getMegaMenu).put(protectAdmin, admin, updateMegaMenu);
 
 module.exports = router;
