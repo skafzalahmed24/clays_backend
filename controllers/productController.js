@@ -82,7 +82,6 @@ const getProducts = asyncHandler(async (req, res) => {
 
     addFilter('category', req.query.category);
     addFilter('subCategory', req.query.subCategory);
-    addFilter('collection', req.query.collection);
     addFilter('attributes.color', req.query['attributes.color']);
     addFilter('attributes.material', req.query['attributes.material']);
     addFilter('attributes.occasion', req.query['attributes.occasion']);

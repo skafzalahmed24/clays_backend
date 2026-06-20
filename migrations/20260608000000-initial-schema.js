@@ -46,7 +46,6 @@ module.exports = {
       originalPrice: { type: Sequelize.FLOAT },
       category: { type: Sequelize.STRING, allowNull: false },
       subCategory: { type: Sequelize.STRING },
-      collection: { type: Sequelize.STRING },
       img: { type: Sequelize.STRING, allowNull: false },
       images: { type: Sequelize.JSONB, defaultValue: [] },
       sku: { type: Sequelize.STRING },

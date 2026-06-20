@@ -45,9 +45,6 @@ const Product = sequelize.define('Product', {
     subCategory: {
         type: DataTypes.STRING,
     },
-    collection: {
-        type: DataTypes.STRING,
-    },
     img: {
         type: DataTypes.STRING,
         allowNull: false,

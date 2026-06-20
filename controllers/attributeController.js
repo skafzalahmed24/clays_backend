@@ -16,8 +16,6 @@ const getAttributes = asyncHandler(async (req, res) => {
                 acc[curr.type].push({ id: curr.id, name: curr.name, hex: curr.value });
         } else if (curr.type === 'categories') {
                 acc[curr.type].push({ id: curr.id, name: curr.name, img: curr.img });
-        } else if (curr.type === 'collections') {
-                acc[curr.type].push({ id: curr.id, name: curr.name, description: curr.value, img: curr.img });
         } else {
                 // For all other types (materials, occasions, subCategories), return object with ID
                 acc[curr.type].push({ id: curr.id, name: curr.name, value: curr.value });
