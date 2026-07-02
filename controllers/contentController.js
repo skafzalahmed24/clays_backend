@@ -39,7 +39,7 @@ const getHeroSlides = async (req, res) => {
 // @route   POST /api/content/hero
 // @access  Private/Admin
 const addHeroSlide = async (req, res) => {
-  const { title, subtitle, media, link, order } = req.body;
+  const { title, subtitle, media, link, order, showButton } = req.body;
 
   try {
     const createdSlide = await HeroSlide.create({
@@ -48,6 +48,7 @@ const addHeroSlide = async (req, res) => {
       media,
       link,
       order,
+      showButton,
     });
     res.status(201).json(createdSlide);
   } catch (error) {
@@ -78,7 +79,7 @@ const deleteHeroSlide = async (req, res) => {
 // @route   PUT /api/content/hero/:id
 // @access  Private/Admin
 const updateHeroSlide = async (req, res) => {
-  const { title, subtitle, media, link, order, isActive } = req.body;
+  const { title, subtitle, media, link, order, isActive, showButton } = req.body;
 
   try {
     const slide = await HeroSlide.findByPk(req.params.id);
@@ -94,6 +95,7 @@ const updateHeroSlide = async (req, res) => {
       slide.link = link !== undefined ? link : slide.link;
       slide.order = order !== undefined ? order : slide.order;
       slide.isActive = isActive !== undefined ? isActive : slide.isActive;
+      slide.showButton = showButton !== undefined ? showButton : slide.showButton;
 
       const updatedSlide = await slide.save();
       res.json(updatedSlide);

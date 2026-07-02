@@ -9,11 +9,11 @@ const HeroSlide = sequelize.define('HeroSlide', {
     },
     title: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
     },
     subtitle: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
     },
     media: {
         type: DataTypes.STRING,
@@ -22,6 +22,10 @@ const HeroSlide = sequelize.define('HeroSlide', {
     link: {
         type: DataTypes.STRING,
         defaultValue: '/shop',
+    },
+    showButton: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
     },
     order: {
         type: DataTypes.INTEGER,

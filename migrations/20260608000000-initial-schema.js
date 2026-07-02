@@ -198,10 +198,11 @@ module.exports = {
     // 13. Create HeroSlides table
     await queryInterface.createTable('HeroSlides', {
       id: { type: Sequelize.UUID, defaultValue: Sequelize.UUIDV4, primaryKey: true, allowNull: false },
-      title: { type: Sequelize.STRING, allowNull: false },
-      subtitle: { type: Sequelize.STRING, allowNull: false },
+      title: { type: Sequelize.STRING, allowNull: true },
+      subtitle: { type: Sequelize.STRING, allowNull: true },
       media: { type: Sequelize.STRING, allowNull: false },
       link: { type: Sequelize.STRING, defaultValue: '/shop' },
+      showButton: { type: Sequelize.BOOLEAN, defaultValue: true },
       order: { type: Sequelize.INTEGER, defaultValue: 0 },
       isActive: { type: Sequelize.BOOLEAN, defaultValue: true },
       createdAt: { type: Sequelize.DATE, allowNull: false },
