@@ -56,6 +56,16 @@ const getProducts = asyncHandler(async (req, res) => {
         whereClause[Op.and] = sequelize.literal('"price" < "originalPrice"');
     }
 
+    // Handle isFeatured
+    if (req.query.isFeatured === 'true') {
+        whereClause.isFeatured = true;
+    }
+
+    // Handle isNewArrival
+    if (req.query.isNewArrival === 'true') {
+        whereClause.isNewArrival = true;
+    }
+
     // Helper for multi-value filtering
     const addFilter = (field, value) => {
         if (!value) return;

@@ -25,7 +25,14 @@ const populateUserCart = async (user) => {
 const populateUserWishlist = async (user) => {
     if (!user) return [];
     const wishlist = user.wishlist || [];
-    const products = await Product.findAll({ where: { id: wishlist } });
+    
+    // Filter out invalid UUIDs to prevent Sequelize crashing on Postgres
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validWishlistIds = wishlist.filter(id => typeof id === 'string' && uuidRegex.test(id));
+    
+    if (validWishlistIds.length === 0) return [];
+    
+    const products = await Product.findAll({ where: { id: validWishlistIds } });
     return products;
 };
 
