@@ -39,13 +39,14 @@ const getHeroSlides = async (req, res) => {
 // @route   POST /api/content/hero
 // @access  Private/Admin
 const addHeroSlide = async (req, res) => {
-  const { title, subtitle, media, link, order, showButton } = req.body;
+  const { title, subtitle, media, mobileMedia, link, order, showButton } = req.body;
 
   try {
     const createdSlide = await HeroSlide.create({
       title,
       subtitle,
       media,
+      mobileMedia,
       link,
       order,
       showButton,
@@ -65,6 +66,7 @@ const deleteHeroSlide = async (req, res) => {
 
     if (slide) {
       if (slide.media) deleteFile(slide.media);
+      if (slide.mobileMedia) deleteFile(slide.mobileMedia);
       await slide.destroy();
       res.json({ message: 'Slide removed' });
     } else {
@@ -79,7 +81,7 @@ const deleteHeroSlide = async (req, res) => {
 // @route   PUT /api/content/hero/:id
 // @access  Private/Admin
 const updateHeroSlide = async (req, res) => {
-  const { title, subtitle, media, link, order, isActive, showButton } = req.body;
+  const { title, subtitle, media, mobileMedia, link, order, isActive, showButton } = req.body;
 
   try {
     const slide = await HeroSlide.findByPk(req.params.id);
@@ -88,10 +90,14 @@ const updateHeroSlide = async (req, res) => {
       if (media && slide.media && media !== slide.media) {
         deleteFile(slide.media);
       }
+      if (mobileMedia && slide.mobileMedia && mobileMedia !== slide.mobileMedia) {
+        deleteFile(slide.mobileMedia);
+      }
 
       slide.title = title || slide.title;
       slide.subtitle = subtitle || slide.subtitle;
       slide.media = media || slide.media;
+      slide.mobileMedia = mobileMedia !== undefined ? mobileMedia : slide.mobileMedia;
       slide.link = link !== undefined ? link : slide.link;
       slide.order = order !== undefined ? order : slide.order;
       slide.isActive = isActive !== undefined ? isActive : slide.isActive;

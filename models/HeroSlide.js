@@ -19,6 +19,10 @@ const HeroSlide = sequelize.define('HeroSlide', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    mobileMedia: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     link: {
         type: DataTypes.STRING,
         defaultValue: '/shop',
