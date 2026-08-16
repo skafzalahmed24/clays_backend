@@ -186,7 +186,11 @@ const getOrders = asyncHandler(async (req, res) => {
     const whereClause = {};
     
     if (search) {
-        whereClause[Op.and] = sequelize.literal(`CAST("Order"."id" AS VARCHAR) ILIKE '%${search}%'`);
+        const cleanSearch = search.replace(/^#/, '');
+        whereClause[Op.or] = [
+            sequelize.literal(`CAST("Order"."id" AS VARCHAR) ILIKE '%${cleanSearch}%'`),
+            sequelize.literal(`CAST("Order"."orderNumber" AS VARCHAR) ILIKE '%${cleanSearch}%'`)
+        ];
     }
     
     if (status && status !== 'All') {
@@ -333,17 +337,28 @@ const trackOrder = asyncHandler(async (req, res) => {
     }
 
     let order;
+    const cleanOrderId = orderId.replace(/^#/, '');
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     
-    if (uuidRegex.test(orderId)) {
-        order = await Order.findByPk(orderId, {
+    if (uuidRegex.test(cleanOrderId)) {
+        order = await Order.findByPk(cleanOrderId, {
             include: [{ model: User, as: 'user', attributes: ['name', 'email'] }]
         });
     } else {
-        order = await Order.findOne({
-            where: sequelize.literal(`CAST("Order"."id" AS VARCHAR) ILIKE '%${orderId}'`),
-            include: [{ model: User, as: 'user', attributes: ['name', 'email'] }]
-        });
+        const num = parseInt(cleanOrderId, 10);
+        if (!isNaN(num)) {
+            order = await Order.findOne({
+                where: { orderNumber: num },
+                include: [{ model: User, as: 'user', attributes: ['name', 'email'] }]
+            });
+        }
+        
+        if (!order) {
+            order = await Order.findOne({
+                where: sequelize.literal(`CAST("Order"."id" AS VARCHAR) ILIKE '%${cleanOrderId}'`),
+                include: [{ model: User, as: 'user', attributes: ['name', 'email'] }]
+            });
+        }
     }
 
     if (!order) {

@@ -11,6 +11,11 @@ const Order = sequelize.define('Order', {
         type: DataTypes.UUID,
         allowNull: false,
     },
+    orderNumber: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        unique: true,
+    },
     orderItems: {
         type: DataTypes.JSONB,
         allowNull: false,
