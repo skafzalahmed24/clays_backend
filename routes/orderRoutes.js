@@ -9,6 +9,8 @@ const {
     updateOrderToDelivered,
     updateOrderStatus,
     cancelOrder,
+    createRazorpayOrder,
+    verifyRazorpayPayment,
 } = require('../controllers/orderController');
 const { protect, admin, protectAdmin } = require('../middleware/authMiddleware');
 
@@ -16,6 +18,8 @@ router.route('/').post(protect, addOrderItems).get(protectAdmin, admin, getOrder
 router.route('/myorders').get(protect, getMyOrders);
 router.route('/:id').get(protect, getOrderById);
 router.route('/:id/pay').put(protect, updateOrderToPaid);
+router.route('/:id/razorpay-order').post(protect, createRazorpayOrder);
+router.route('/:id/razorpay-verify').post(protect, verifyRazorpayPayment);
 router.route('/:id/deliver').put(protectAdmin, admin, updateOrderToDelivered);
 router.route('/:id/status').put(protectAdmin, admin, updateOrderStatus);
 router.route('/:id/cancel').put(protect, cancelOrder);

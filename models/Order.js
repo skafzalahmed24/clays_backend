@@ -89,7 +89,9 @@ const Order = sequelize.define('Order', {
 Order.prototype.toJSON = function () {
     const values = { ...this.get() };
     values._id = values.id;
-    values.user = values.userId; // Alias user to userId for MongoDB query compatibility
+    if (!values.user) {
+        values.user = values.userId; // Alias user to userId for MongoDB query compatibility if not populated
+    }
     return values;
 };
 

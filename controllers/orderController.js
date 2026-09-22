@@ -1,4 +1,6 @@
 const asyncHandler = require('express-async-handler');
+const crypto = require('crypto');
+const Razorpay = require('razorpay');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const Product = require('../models/Product');
@@ -407,6 +409,70 @@ const trackOrder = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Create Razorpay order
+// @route   POST /api/orders/:id/razorpay-order
+// @access  Private
+const createRazorpayOrder = asyncHandler(async (req, res) => {
+    const order = await Order.findByPk(req.params.id);
+
+    if (order) {
+        const instance = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
+
+        const options = {
+            amount: Math.round(order.totalPrice * 100),  // amount in smallest currency unit
+            currency: "INR",
+            receipt: `rcpt_${order.orderNumber || order.id.substring(0, 10)}`
+        };
+
+        const razorpayOrder = await instance.orders.create(options);
+
+        res.json(razorpayOrder);
+    } else {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+});
+
+// @desc    Verify Razorpay payment
+// @route   POST /api/orders/:id/razorpay-verify
+// @access  Private
+const verifyRazorpayPayment = asyncHandler(async (req, res) => {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .update(body.toString())
+        .digest("hex");
+
+    if (expectedSignature === razorpay_signature) {
+        const order = await Order.findByPk(req.params.id);
+
+        if (order) {
+            order.isPaid = true;
+            order.paidAt = new Date();
+            order.paymentResult = {
+                id: razorpay_payment_id,
+                status: 'success',
+                update_time: new Date().toISOString(),
+                email_address: req.user ? req.user.email : '',
+            };
+
+            const updatedOrder = await order.save();
+            res.json(updatedOrder);
+        } else {
+            res.status(404);
+            throw new Error('Order not found');
+        }
+    } else {
+        res.status(400);
+        throw new Error('Invalid signature');
+    }
+});
+
 module.exports = {
     addOrderItems,
     getOrderById,
@@ -417,4 +483,6 @@ module.exports = {
     updateOrderStatus,
     cancelOrder,
     trackOrder,
+    createRazorpayOrder,
+    verifyRazorpayPayment,
 };

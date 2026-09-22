@@ -95,6 +95,10 @@ app.get('/api/version', (req, res) => {
     res.json({ version: require('./package.json').version });
 });
 
+app.get('/api/config/razorpay', (req, res) => {
+    res.json({ keyId: process.env.RAZORPAY_KEY_ID });
+});
+
 // Error Handling Middleware
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 app.use(notFound);

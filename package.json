@@ -51,6 +51,7 @@
     "nodemailer": "^7.0.12",
     "pg": "^8.21.0",
     "pg-hstore": "^2.3.4",
+    "razorpay": "^2.9.8",
     "sequelize": "^6.37.8",
     "xss-clean": "^0.1.4"
   },
