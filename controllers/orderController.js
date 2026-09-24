@@ -8,6 +8,7 @@ const GeneralSetting = require('../models/GeneralSetting');
 const { sequelize } = require('../config/db');
 const { Op } = require('sequelize');
 const { successResponse } = require('../utils/responseHelper');
+const { createShipment } = require('../utils/delhiveryService');
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -473,6 +474,54 @@ const verifyRazorpayPayment = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Create Delhivery Shipment
+// @route   POST /api/orders/:id/shipment
+// @access  Private/Admin
+const createDelhiveryShipment = asyncHandler(async (req, res) => {
+    const order = await Order.findByPk(req.params.id, {
+        include: [{
+            model: User,
+            as: 'user',
+            attributes: ['name', 'email']
+        }]
+    });
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+
+    if (order.shippingResult && order.shippingResult.waybill) {
+        res.status(400);
+        throw new Error('Shipment already created for this order');
+    }
+
+    try {
+        const shipmentResponse = await createShipment(order);
+        
+        if (shipmentResponse && shipmentResponse.packages && shipmentResponse.packages.length > 0) {
+            order.shippingResult = {
+                waybill: shipmentResponse.packages[0].waybill,
+                status: shipmentResponse.packages[0].status,
+                raw: shipmentResponse
+            };
+            
+            if (order.status === 'Pending') {
+                order.status = 'Processing';
+            }
+
+            await order.save();
+            res.status(201).json(order);
+        } else {
+            res.status(400);
+            throw new Error('Failed to generate Waybill from Delhivery');
+        }
+    } catch (error) {
+        res.status(500);
+        throw new Error(error.message || 'Delhivery integration failed');
+    }
+});
+
 module.exports = {
     addOrderItems,
     getOrderById,
@@ -485,4 +534,5 @@ module.exports = {
     trackOrder,
     createRazorpayOrder,
     verifyRazorpayPayment,
+    createDelhiveryShipment,
 };

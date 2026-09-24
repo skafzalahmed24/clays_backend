@@ -31,6 +31,9 @@ const Order = sequelize.define('Order', {
     paymentResult: {
         type: DataTypes.JSONB,
     },
+    shippingResult: {
+        type: DataTypes.JSONB,
+    },
     itemsPrice: {
         type: DataTypes.FLOAT,
         allowNull: false,
