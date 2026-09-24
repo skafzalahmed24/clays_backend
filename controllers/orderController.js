@@ -56,10 +56,17 @@ const addOrderItems = asyncHandler(async (req, res) => {
             });
         }
 
-        // 3. Recalculate Shipping & Tax
+        // 3. Recalculate Shipping & Tax dynamically
         const settings = await GeneralSetting.findOne();
+        const shippingConf = settings?.shippingConfig || {};
+        const freeThreshold = typeof shippingConf.freeShippingThreshold === 'number' ? shippingConf.freeShippingThreshold : 999;
+        const defaultFee = typeof shippingConf.defaultShippingFee === 'number' ? shippingConf.defaultShippingFee : 50;
         
-        const shippingPrice = calculatedItemsPrice > 1000 ? 0 : 0;
+        let shippingPrice = calculatedItemsPrice >= freeThreshold ? 0 : defaultFee;
+        if (paymentMethod === 'COD' && shippingConf.codExtraFee) {
+            shippingPrice += Number(shippingConf.codExtraFee);
+        }
+
         const taxRate = settings ? (settings.taxRate || 0) : 0;
         const taxPrice = Number((calculatedItemsPrice * (taxRate / 100)).toFixed(2));
 
@@ -400,13 +407,27 @@ const trackOrder = asyncHandler(async (req, res) => {
         { status: 'Delivered', date: order.deliveredAt, completed: order.isDelivered }
     ];
 
+    let liveTracking = null;
+    if (order.shippingResult?.waybill) {
+        try {
+            const { trackShipment } = require('../utils/delhiveryService');
+            liveTracking = await trackShipment(order.shippingResult.waybill);
+        } catch (e) {
+            console.warn('Live tracking fetch warning:', e.message);
+        }
+    }
+
     res.json({
         id: order.id,
+        orderNumber: order.orderNumber,
         status: order.status || 'Processing',
         date: order.createdAt,
         items: order.orderItems.length,
         total: order.totalPrice,
-        timeline
+        waybill: order.shippingResult?.waybill || null,
+        courier: order.shippingResult?.waybill ? 'Delhivery' : null,
+        timeline,
+        liveTracking
     });
 });
 

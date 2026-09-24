@@ -125,6 +125,27 @@ const GeneralSetting = sequelize.define('GeneralSetting', {
             footerLogo: '',
         },
     },
+    shippingConfig: {
+        type: DataTypes.JSONB,
+        defaultValue: {
+            provider: 'Delhivery',
+            warehouseName: 'Primary Warehouse',
+            warehouseAddress: '123 Herbal Garden Road, Green Sector',
+            city: 'Mumbai',
+            state: 'Maharashtra',
+            pin: '400001',
+            country: 'India',
+            phone: '+91 98765 43210',
+            sellerName: 'Clarysays',
+            sellerGst: '',
+            freeShippingThreshold: 999,
+            defaultShippingFee: 50,
+            codAvailable: true,
+            codExtraFee: 0,
+            enableAutoWaybill: false,
+            estimatedDays: '3 - 5 business days'
+        },
+    },
     _id: {
         type: DataTypes.VIRTUAL,
         get() {

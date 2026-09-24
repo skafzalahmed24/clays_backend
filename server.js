@@ -65,12 +65,14 @@ const contentRoutes = require('./routes/contentRoutes');
 const couponRoutes = require('./routes/couponRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const shippingRoutes = require('./routes/shippingRoutes');
 
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/shipping', shippingRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/categories', categoryRoutes);

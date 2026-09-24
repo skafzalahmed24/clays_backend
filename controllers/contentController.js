@@ -391,6 +391,9 @@ const updateSettings = async (req, res) => {
         if (req.body.seo) settings.seo = { ...settings.seo, ...req.body.seo };
         if (req.body.identity) settings.identity = { ...settings.identity, ...req.body.identity };
         if (req.body.uiLabels) settings.uiLabels = req.body.uiLabels;
+        if (req.body.shippingConfig) {
+            settings.shippingConfig = { ...settings.shippingConfig, ...req.body.shippingConfig };
+        }
 
         const updatedSettings = await settings.save();
         res.json(updatedSettings);

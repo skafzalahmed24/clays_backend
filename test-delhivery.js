@@ -1,8 +1,8 @@
 const axios = require('axios');
 const dotenv = require('dotenv');
 
-// Load environment variables from the .env file in the backend folder
-dotenv.config({ path: '/var/www/html/Clay-ecommerce/clays_backend/.env' });
+// Load environment variables from local .env
+dotenv.config();
 
 const testDelhivery = async () => {
     try {
