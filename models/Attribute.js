@@ -21,6 +21,9 @@ const Attribute = sequelize.define('Attribute', {
     img: {
         type: DataTypes.STRING,
     },
+    bannerImage: {
+        type: DataTypes.STRING,
+    },
     _id: {
         type: DataTypes.VIRTUAL,
         get() {

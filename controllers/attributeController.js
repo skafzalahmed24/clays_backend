@@ -15,7 +15,7 @@ const getAttributes = asyncHandler(async (req, res) => {
         if (curr.type === 'colors') {
                 acc[curr.type].push({ id: curr.id, name: curr.name, hex: curr.value });
         } else if (curr.type === 'categories') {
-                acc[curr.type].push({ id: curr.id, name: curr.name, img: curr.img });
+                acc[curr.type].push({ id: curr.id, name: curr.name, img: curr.img, bannerImage: curr.bannerImage });
         } else {
                 // For all other types (materials, occasions, subCategories), return object with ID
                 acc[curr.type].push({ id: curr.id, name: curr.name, value: curr.value });
@@ -30,13 +30,14 @@ const getAttributes = asyncHandler(async (req, res) => {
 // @route   POST /api/attributes
 // @access  Private/Admin
 const addAttribute = asyncHandler(async (req, res) => {
-    const { type, name, value, img } = req.body;
+    const { type, name, value, img, bannerImage } = req.body;
 
     const attribute = await Attribute.create({
         type,
         name,
         value,
-        img
+        img,
+        bannerImage
     });
     res.status(201).json(attribute);
 });
@@ -63,9 +64,10 @@ const updateAttribute = asyncHandler(async (req, res) => {
     const attribute = await Attribute.findByPk(req.params.id);
 
     if (attribute) {
-        attribute.name = req.body.name || attribute.name;
-        attribute.value = req.body.value || attribute.value;
-        attribute.img = req.body.img || attribute.img;
+        attribute.name = req.body.name !== undefined ? req.body.name : attribute.name;
+        attribute.value = req.body.value !== undefined ? req.body.value : attribute.value;
+        attribute.img = req.body.img !== undefined ? req.body.img : attribute.img;
+        attribute.bannerImage = req.body.bannerImage !== undefined ? req.body.bannerImage : attribute.bannerImage;
         
         const updatedAttribute = await attribute.save();
         res.json(updatedAttribute);
