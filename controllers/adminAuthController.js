@@ -2,6 +2,7 @@ const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
 const { Op } = require('sequelize');
+const { generateOTP, isDynamicOtp, isOtpValid } = require('../utils/otpHelper');
 
 // @desc    Auth admin & get token
 // @route   POST /api/admin/login
@@ -129,29 +130,33 @@ const forgotPasswordAdmin = async (req, res) => {
             return;
         }
 
-        const otp = '123456'; 
+        const otp = generateOTP();
         
         admin.otp = otp;
         admin.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
         await admin.save();
 
-        // Send Email
-        try {
-            const { sendEmail } = require('../utils/emailService');
-            // Reuse email service
-            await sendEmail({
-                email: admin.email,
-                subject: 'Admin Password Reset OTP',
-                message: `Your OTP for admin password reset is: ${otp}`
-            });
-            
-            res.status(200).json({ message: 'OTP sent to email' });
-        } catch {
-             admin.otp = null;
-             admin.otpExpires = null;
-             await admin.save();
-             res.status(500).json({ message: 'Email could not be sent' });
+        if (isDynamicOtp()) {
+            // Send Email
+            try {
+                const { sendEmail } = require('../utils/emailService');
+                await sendEmail({
+                    email: admin.email,
+                    subject: 'Admin Password Reset OTP',
+                    message: `Your OTP for admin password reset is: ${otp}`
+                });
+                
+                res.status(200).json({ message: 'OTP sent to email' });
+            } catch {
+                 admin.otp = null;
+                 admin.otpExpires = null;
+                 await admin.save();
+                 res.status(500).json({ message: 'Email could not be sent' });
+            }
+        } else {
+            console.log(`[Admin Forgot Password - STATIC MODE] OTP_STATUS is false. Static OTP: ${otp}`);
+            res.status(200).json({ message: `Static OTP active for testing: ${otp}` });
         }
 
     } catch (_error) {
@@ -168,13 +173,18 @@ const resetPasswordAdmin = async (req, res) => {
     try {
         const admin = await Admin.findOne({
             where: {
-                email: email ? email.toLowerCase() : '',
-                otp,
-                otpExpires: { [Op.gt]: new Date() },
+                email: email ? email.toLowerCase() : ''
             }
         });
 
         if (!admin) {
+            res.status(404).json({ message: 'Admin not found' });
+            return;
+        }
+
+        const isValid = isOtpValid(otp, admin.otp, admin.otpExpires);
+
+        if (!isValid) {
             res.status(400).json({ message: 'Invalid OTP or expired' });
             return;
         }

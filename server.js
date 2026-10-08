@@ -21,6 +21,9 @@ require('./models');
 
 const app = express();
 
+// Enable trust proxy for Nginx / Cloudflare reverse proxies to fix express-rate-limit X-Forwarded-For warning
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(express.json());
 app.use(cookieParser());

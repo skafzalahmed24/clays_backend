@@ -37,6 +37,10 @@ const User = sequelize.define('User', {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
     },
+    phone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     otp: {
         type: DataTypes.STRING,
     },
