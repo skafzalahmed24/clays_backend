@@ -1,9 +1,25 @@
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+}
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const dotenv = require('dotenv');
 
-// Load env vars
-dotenv.config();
+// Load env vars from multiple possible locations (backend dir, utils dir, root dir, cwd)
+const envLocations = [
+    path.join(__dirname, '.env'),
+    path.join(__dirname, 'utils', '.env'),
+    path.join(__dirname, '..', '.env'),
+    path.resolve(process.cwd(), '.env')
+];
+for (const envFile of envLocations) {
+    if (fs.existsSync(envFile)) {
+        dotenv.config({ path: envFile, override: false });
+    }
+}
+dotenv.config(); // fallback default
 
 const cors = require('cors');
 const helmet = require('helmet');

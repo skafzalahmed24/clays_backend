@@ -14,14 +14,20 @@ const User = sequelize.define('User', {
     },
     email: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
         unique: true,
         validate: {
-            isEmail: true,
+            isEmailOrNull(value) {
+                if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                    throw new Error('Must be a valid email address');
+                }
+            }
         },
         set(value) {
-            if (value) {
-                this.setDataValue('email', value.toLowerCase());
+            if (value && typeof value === 'string' && value.trim()) {
+                this.setDataValue('email', value.trim().toLowerCase());
+            } else {
+                this.setDataValue('email', null);
             }
         }
     },

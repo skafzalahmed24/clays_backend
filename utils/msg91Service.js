@@ -1,4 +1,25 @@
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+}
+const path = require('path');
+const fs = require('fs');
+const dotenv = require('dotenv');
 const axios = require('axios');
+
+// Ensure env variables are loaded from utils/.env, backend/.env, or root .env
+const envLocations = [
+    path.join(__dirname, '.env'),
+    path.join(__dirname, '..', '.env'),
+    path.join(__dirname, '..', '..', '.env'),
+    path.resolve(process.cwd(), '.env')
+];
+for (const envFile of envLocations) {
+    if (fs.existsSync(envFile)) {
+        dotenv.config({ path: envFile, override: false });
+    }
+}
+dotenv.config();
 
 /**
  * MSG91 Service configuration and helper methods.
@@ -130,9 +151,11 @@ const sendMsg91Otp = async ({
 
     // 4. Send request to MSG91 v5 OTP API
     try {
+        const sender = process.env.MSG91_SENDER_ID || 'CLYHBS';
         const queryParams = new URLSearchParams({
             template_id: targetTemplateId || '',
             mobile: mobile,
+            sender: sender,
             otp_expiry: String(process.env.MSG91_OTP_EXPIRY || otpExpiry),
             otp_length: String(process.env.MSG91_OTP_LENGTH || otpLength)
         });

@@ -1,3 +1,21 @@
+const path = require('path');
+const fs = require('fs');
+const dotenv = require('dotenv');
+
+// Ensure env variables are loaded from utils/.env, backend/.env, or root .env
+const envLocations = [
+    path.join(__dirname, '.env'),
+    path.join(__dirname, '..', '.env'),
+    path.join(__dirname, '..', '..', '.env'),
+    path.resolve(process.cwd(), '.env')
+];
+for (const envFile of envLocations) {
+    if (fs.existsSync(envFile)) {
+        dotenv.config({ path: envFile, override: false });
+    }
+}
+dotenv.config();
+
 /**
  * OTP Configuration & Generation Helper
  *

@@ -1,68 +1,112 @@
 const Joi = require('joi');
+const { validateAndFormatIndianMobile } = require('../utils/msg91Service');
 
-// Indian phone regex: Accepts 10 digits starting with 6-9, or prefixed with +91 / 91 / 0
-const indianPhoneRegex = /^(\+91[\s-]?)?[6-9]\d{9}$|^91[6-9]\d{9}$|^0[6-9]\d{9}$/;
+// Validator function that enforces Indian mobile (+91 strictly) and normalizes input
+const indianPhoneValidator = (value, helpers) => {
+    if (!value || typeof value !== 'string' || value.trim() === '') {
+        return helpers.message('Mobile number (+91) is required');
+    }
+    const val = validateAndFormatIndianMobile(value);
+    if (!val.isValid) {
+        return helpers.message(val.error || 'Only Indian mobile numbers (+91) with 10 digits starting with 6, 7, 8, or 9 are accepted');
+    }
+    return val.formattedNumber;
+};
 
 const registerSchema = Joi.object({
-    name: Joi.string().min(2).required(),
-    email: Joi.string().email().required(),
-    password: Joi.string().min(6).required(),
+    name: Joi.string().min(2).required().messages({
+        'string.empty': 'Full name is required',
+        'any.required': 'Full name is required'
+    }),
+    password: Joi.string().min(6).required().messages({
+        'string.empty': 'Password is required (minimum 6 characters)',
+        'any.required': 'Password is required'
+    }),
     phone: Joi.string()
-        .pattern(indianPhoneRegex)
-        .optional()
+        .custom(indianPhoneValidator)
+        .required()
         .messages({
-            'string.pattern.base': 'Phone number must be a valid Indian mobile number (+91) with 10 digits starting with 6, 7, 8, or 9'
-        })
+            'string.empty': 'Mobile number is required',
+            'any.required': 'Mobile number is required'
+        }),
+    email: Joi.string().trim().email().allow('', null).optional()
 });
 
 const loginSchema = Joi.object({
-    email: Joi.string().email().optional(),
-    phone: Joi.string().pattern(indianPhoneRegex).optional(),
-    password: Joi.string().required(),
-}).or('email', 'phone').messages({
-    'object.missing': 'Please provide either email or phone number to login'
+    phone: Joi.string()
+        .custom(indianPhoneValidator)
+        .required()
+        .messages({
+            'string.empty': 'Mobile number is required',
+            'any.required': 'Mobile number is required'
+        }),
+    password: Joi.string().required().messages({
+        'string.empty': 'Password is required',
+        'any.required': 'Password is required'
+    })
 });
 
 const sendOtpSchema = Joi.object({
-    phone: Joi.string().pattern(indianPhoneRegex).optional(),
-    email: Joi.string().email().optional(),
+    phone: Joi.string()
+        .custom(indianPhoneValidator)
+        .required()
+        .messages({
+            'string.empty': 'Mobile number is required',
+            'any.required': 'Mobile number is required'
+        }),
     type: Joi.string().valid('verification', 'login', 'reset').default('verification')
-}).or('phone', 'email').messages({
-    'object.missing': 'Please provide either a phone number (+91) or email address'
 });
 
 const verifyOtpSchema = Joi.object({
+    otp: Joi.string().trim().min(4).max(6).required().messages({
+        'string.empty': 'OTP code is required',
+        'any.required': 'OTP code is required'
+    }),
+    phone: Joi.string()
+        .custom(indianPhoneValidator)
+        .required()
+        .messages({
+            'string.empty': 'Mobile number is required',
+            'any.required': 'Mobile number is required'
+        })
+});
+
+const resendOtpSchema = Joi.object({
+    phone: Joi.string()
+        .custom(indianPhoneValidator)
+        .required()
+        .messages({
+            'string.empty': 'Mobile number is required',
+            'any.required': 'Mobile number is required'
+        })
+});
+
+const forgotPasswordSchema = Joi.object({
+    phone: Joi.string()
+        .custom(indianPhoneValidator)
+        .required()
+        .messages({
+            'string.empty': 'Mobile number is required',
+            'any.required': 'Mobile number is required'
+        })
+});
+
+const resetPasswordSchema = Joi.object({
     otp: Joi.string().min(4).max(6).required().messages({
         'string.empty': 'OTP code is required',
         'any.required': 'OTP code is required'
     }),
-    email: Joi.string().email().optional(),
-    phone: Joi.string().pattern(indianPhoneRegex).optional(),
-}).or('email', 'phone').messages({
-    'object.missing': 'Please provide either email or phone number along with OTP'
-});
-
-const resendOtpSchema = Joi.object({
-    email: Joi.string().email().optional(),
-    phone: Joi.string().pattern(indianPhoneRegex).optional(),
-}).or('email', 'phone').messages({
-    'object.missing': 'Please provide either email or phone number to resend OTP'
-});
-
-const forgotPasswordSchema = Joi.object({
-    email: Joi.string().email().optional(),
-    phone: Joi.string().pattern(indianPhoneRegex).optional(),
-}).or('email', 'phone').messages({
-    'object.missing': 'Please provide either email or phone number'
-});
-
-const resetPasswordSchema = Joi.object({
-    otp: Joi.string().min(4).max(6).required(),
-    password: Joi.string().min(6).required(),
-    email: Joi.string().email().optional(),
-    phone: Joi.string().pattern(indianPhoneRegex).optional(),
-}).or('email', 'phone').messages({
-    'object.missing': 'Please provide either email or phone number'
+    password: Joi.string().min(6).required().messages({
+        'string.empty': 'New password is required (minimum 6 characters)',
+        'any.required': 'New password is required'
+    }),
+    phone: Joi.string()
+        .custom(indianPhoneValidator)
+        .required()
+        .messages({
+            'string.empty': 'Mobile number is required',
+            'any.required': 'Mobile number is required'
+        })
 });
 
 module.exports = {
