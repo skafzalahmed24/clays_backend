@@ -13,6 +13,8 @@ const {
   deleteSocialPost,
   getHeritage,
   updateHeritage,
+  getGoldStandard,
+  updateGoldStandard,
   getTrustBadges,
   addTrustBadge,
   deleteTrustBadge,
@@ -41,6 +43,7 @@ router.route('/social').get(protectPublic, getSocialFeed).post(protectAdmin, adm
 router.route('/social/:id').delete(protectAdmin, admin, deleteSocialPost);
 
 router.route('/heritage').get(protectPublic, getHeritage).put(protectAdmin, admin, updateHeritage);
+router.route('/gold-standard').get(protectPublic, getGoldStandard).put(protectAdmin, admin, updateGoldStandard);
 
 router.route('/trust-badges').get(protectPublic, getTrustBadges).post(protectAdmin, admin, addTrustBadge);
 router.route('/trust-badges/:id').delete(protectAdmin, admin, deleteTrustBadge);

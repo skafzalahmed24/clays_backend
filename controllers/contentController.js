@@ -4,6 +4,7 @@ const path = require('path');
 const Testimonial = require('../models/Testimonial');
 const SocialPost = require('../models/SocialPost');
 const Heritage = require('../models/Heritage');
+const GoldStandard = require('../models/GoldStandard');
 const TrustBadge = require('../models/TrustBadge');
 const FAQ = require('../models/FAQ');
 const GeneralSetting = require('../models/GeneralSetting');
@@ -222,7 +223,15 @@ const getHeritage = async (req, res) => {
         const heritage = await Heritage.getSingleton();
         res.json(heritage);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.json({
+            title: "Mastery in Every Cut",
+            subtitle: "Since 1985",
+            description: "Our heritage is built on a foundation of uncompromised quality and artistic vision. Every piece of Clays jewelry tells a story of tradition, passion, and the pursuit of perfection.",
+            description2: "Every gem is hand-selected, cut with mathematical precision, and set in responsibly sourced precious metals designed to endure for generations.",
+            image: "/uploads/story.png",
+            link: "/about",
+            linkText: "Read Our Story"
+        });
     }
 };
 
@@ -232,17 +241,61 @@ const getHeritage = async (req, res) => {
 const updateHeritage = async (req, res) => {
     try {
         const heritage = await Heritage.getSingleton();
-        const { title, subtitle, description, image, link, linkText } = req.body;
+        const { title, subtitle, description, description2, image, link, linkText } = req.body;
 
-        heritage.title = title || heritage.title;
-        heritage.subtitle = subtitle || heritage.subtitle;
-        heritage.description = description || heritage.description;
-        heritage.image = image || heritage.image;
-        heritage.link = link || heritage.link;
-        heritage.linkText = linkText || heritage.linkText;
+        if (title !== undefined) heritage.title = title;
+        if (subtitle !== undefined) heritage.subtitle = subtitle;
+        if (description !== undefined) heritage.description = description;
+        if (description2 !== undefined) heritage.description2 = description2;
+        if (image !== undefined) heritage.image = image;
+        if (link !== undefined) heritage.link = link;
+        if (linkText !== undefined) heritage.linkText = linkText;
 
         const updatedHeritage = await heritage.save();
         res.json(updatedHeritage);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get gold standard content (singleton)
+// @route   GET /api/content/gold-standard
+// @access  Public
+const getGoldStandard = async (req, res) => {
+    try {
+        const goldStandard = await GoldStandard.getSingleton();
+        res.json(goldStandard);
+    } catch (error) {
+        res.json({
+            title: 'The Gold Standard',
+            subtitle: '',
+            description: 'Experience the pinnacle of luxury skincare. Our signature serum is infused with pure 24k gold flakes, known since ancient times for its powerful anti-aging and illuminating properties.',
+            description2: 'Combined with ultra-hydrating hyaluronic acid and rare botanical extracts, it penetrates deep to restore your skin\'s natural elasticity, leaving you with an unmistakable, radiant glow.',
+            image: '/assets/gold_standard.png',
+            link: '/shop',
+            linkText: 'Discover The Formula'
+        });
+    }
+};
+
+// @desc    Update gold standard content
+// @route   PUT /api/content/gold-standard
+// @access  Private/Admin
+const updateGoldStandard = async (req, res) => {
+    try {
+        const goldStandard = await GoldStandard.getSingleton();
+        const { title, subtitle, description, description2, image, link, linkText } = req.body;
+
+        if (title !== undefined) goldStandard.title = title;
+        if (subtitle !== undefined) goldStandard.subtitle = subtitle;
+        if (description !== undefined) goldStandard.description = description;
+        if (description2 !== undefined) goldStandard.description2 = description2;
+        if (image !== undefined) goldStandard.image = image;
+        if (link !== undefined) goldStandard.link = link;
+        if (linkText !== undefined) goldStandard.linkText = linkText;
+
+        const updated = await goldStandard.save();
+        res.json(updated);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -539,6 +592,8 @@ module.exports = {
   deleteSocialPost,
   getHeritage,
   updateHeritage,
+  getGoldStandard,
+  updateGoldStandard,
   getTrustBadges,
   addTrustBadge,
   deleteTrustBadge,

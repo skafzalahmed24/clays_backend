@@ -9,6 +9,7 @@ const Contact = require('./Contact');
 const Coupon = require('./Coupon');
 const FAQ = require('./FAQ');
 const GeneralSetting = require('./GeneralSetting');
+const GoldStandard = require('./GoldStandard');
 const Heritage = require('./Heritage');
 const HeroSlide = require('./HeroSlide');
 const MegaMenu = require('./MegaMenu');
@@ -43,6 +44,7 @@ const db = {
     Coupon,
     FAQ,
     GeneralSetting,
+    GoldStandard,
     Heritage,
     HeroSlide,
     MegaMenu,

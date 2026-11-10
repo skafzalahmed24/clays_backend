@@ -19,6 +19,11 @@ const Heritage = sequelize.define('Heritage', {
         type: DataTypes.TEXT,
         allowNull: false,
     },
+    description2: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: '',
+    },
     image: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -43,14 +48,19 @@ const Heritage = sequelize.define('Heritage', {
 
 // Singleton helper static method
 Heritage.getSingleton = async function () {
+    try {
+        await this.sync({ alter: false });
+    } catch (_) {}
     const doc = await this.findOne();
     if (doc) return doc;
     return await this.create({
         title: "Mastery in Every Cut",
         subtitle: "Since 1985",
-        description: "Our heritage is built on a foundation of uncompromised quality and artistic vision. Every piece of propert jewelry tells a story of tradition, passion, and the pursuit of perfection.",
+        description: "Our heritage is built on a foundation of uncompromised quality and artistic vision. Every piece of Clays jewelry tells a story of tradition, passion, and the pursuit of perfection.",
+        description2: "Every gem is hand-selected, cut with mathematical precision, and set in responsibly sourced precious metals designed to endure for generations.",
         image: "/uploads/story.png",
-        link: "/about"
+        link: "/about",
+        linkText: "Read Our Story"
     });
 };
 
