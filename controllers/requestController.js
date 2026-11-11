@@ -4,7 +4,7 @@ const StockRequest = require('../models/StockRequest');
 // @route   POST /api/requests
 // @access  Public
 const createRequest = async (req, res) => {
-    const { productId, productName, productImg, userEmail } = req.body;
+    const { productId, productName, productImg, userEmail, phone, pincode } = req.body;
 
     try {
         // Check for existing request from this email for this product
@@ -19,6 +19,8 @@ const createRequest = async (req, res) => {
             productName,
             productImg,
             userEmail,
+            phone: phone ? String(phone).trim() : null,
+            pincode: pincode ? String(pincode).trim() : null,
         });
 
         res.status(201).json(request);

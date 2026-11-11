@@ -199,6 +199,13 @@ const getProductById = asyncHandler(async (req, res) => {
 const createProduct = asyncHandler(async (req, res) => {
     req.body.userId = req.user.id;
     const sanitizedData = sanitizeProductData(req.body);
+
+    if (sanitizedData.inStock === false) {
+        sanitizedData.stock = 0;
+    } else if (sanitizedData.stock !== undefined && Number(sanitizedData.stock) <= 0) {
+        sanitizedData.inStock = false;
+    }
+
     console.log('CREATE PRODUCT SANITIZED DATA:', JSON.stringify(sanitizedData, null, 2));
     try {
         const product = await Product.create(sanitizedData);
@@ -222,6 +229,13 @@ const updateProduct = asyncHandler(async (req, res) => {
     }
 
     const sanitizedData = sanitizeProductData(req.body);
+
+    if (sanitizedData.inStock === false) {
+        sanitizedData.stock = 0;
+    } else if (sanitizedData.stock !== undefined && Number(sanitizedData.stock) <= 0) {
+        sanitizedData.inStock = false;
+    }
+
     await Product.update(sanitizedData, { where: { id: req.params.id } });
     const updatedProduct = await Product.findByPk(req.params.id);
 

@@ -59,13 +59,20 @@ const addOrderItems = asyncHandler(async (req, res) => {
         // 3. Recalculate Shipping & Tax dynamically
         const settings = await GeneralSetting.findOne();
         const shippingConf = settings?.shippingConfig || {};
+
+        if (paymentMethod === 'COD' && shippingConf.codAvailable === false) {
+            res.status(400);
+            throw new Error('Cash on Delivery is currently unavailable. Please choose an online payment method.');
+        }
+
         const freeThreshold = typeof shippingConf.freeShippingThreshold === 'number' ? shippingConf.freeShippingThreshold : 999;
         const defaultFee = typeof shippingConf.defaultShippingFee === 'number' ? shippingConf.defaultShippingFee : 50;
         
-        let shippingPrice = calculatedItemsPrice >= freeThreshold ? 0 : defaultFee;
-        if (paymentMethod === 'COD' && shippingConf.codExtraFee) {
-            shippingPrice += Number(shippingConf.codExtraFee);
-        }
+        const baseShippingPrice = calculatedItemsPrice >= freeThreshold ? 0 : defaultFee;
+        const codFee = (paymentMethod === 'COD' && Number(shippingConf.codExtraFee) > 0)
+            ? Number(shippingConf.codExtraFee)
+            : 0;
+        const shippingPrice = baseShippingPrice;
 
         const taxRate = settings ? (settings.taxRate || 0) : 0;
         const taxPrice = Number((calculatedItemsPrice * (taxRate / 100)).toFixed(2));
@@ -76,7 +83,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
              discount = Number(coupon.discount) || 0;
         }
 
-        const totalPrice = calculatedItemsPrice + shippingPrice + taxPrice - discount;
+        const totalPrice = calculatedItemsPrice + shippingPrice + codFee + taxPrice - discount;
 
         const order = await Order.create({
             orderItems: finalOrderItems,
@@ -86,6 +93,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
             itemsPrice: calculatedItemsPrice,
             taxPrice,
             shippingPrice,
+            codFee,
             totalPrice,
             isPaid: false
         });

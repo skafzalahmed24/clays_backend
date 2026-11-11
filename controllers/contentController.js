@@ -5,6 +5,8 @@ const Testimonial = require('../models/Testimonial');
 const SocialPost = require('../models/SocialPost');
 const Heritage = require('../models/Heritage');
 const GoldStandard = require('../models/GoldStandard');
+const OurVision = require('../models/OurVision');
+const DiscoverSection = require('../models/DiscoverSection');
 const TrustBadge = require('../models/TrustBadge');
 const FAQ = require('../models/FAQ');
 const GeneralSetting = require('../models/GeneralSetting');
@@ -301,6 +303,103 @@ const updateGoldStandard = async (req, res) => {
     }
 };
 
+// @desc    Get our vision content (singleton)
+// @route   GET /api/content/our-vision
+// @access  Public
+const getOurVision = async (req, res) => {
+    try {
+        const ourVision = await OurVision.getSingleton();
+        res.json(ourVision);
+    } catch (error) {
+        res.json({
+            title: 'Our Vision',
+            description: 'Crafted with intention. We believe true luxury lies in the purity of ingredients and the efficacy of nature.',
+            item1Title: 'Clean Ingredients',
+            item1Description: 'Formulated without harmful toxins, sulfates, or parabens. Pure, safe, and effective.',
+            item1Icon: 'sparkles',
+            item2Title: 'Cruelty-Free',
+            item2Description: 'Never tested on animals. We are committed to ethical beauty that respects all life.',
+            item2Icon: 'heart',
+            item3Title: 'Dermatologist Tested',
+            item3Description: 'Rigorously tested to ensure optimal safety and performance for even the most sensitive skin.',
+            item3Icon: 'shield'
+        });
+    }
+};
+
+// @desc    Update our vision content
+// @route   PUT /api/content/our-vision
+// @access  Private/Admin
+const updateOurVision = async (req, res) => {
+    try {
+        const ourVision = await OurVision.getSingleton();
+        const {
+            title, description,
+            item1Title, item1Description, item1Icon,
+            item2Title, item2Description, item2Icon,
+            item3Title, item3Description, item3Icon
+        } = req.body;
+
+        if (title !== undefined) ourVision.title = title;
+        if (description !== undefined) ourVision.description = description;
+        if (item1Title !== undefined) ourVision.item1Title = item1Title;
+        if (item1Description !== undefined) ourVision.item1Description = item1Description;
+        if (item1Icon !== undefined) ourVision.item1Icon = item1Icon;
+        if (item2Title !== undefined) ourVision.item2Title = item2Title;
+        if (item2Description !== undefined) ourVision.item2Description = item2Description;
+        if (item2Icon !== undefined) ourVision.item2Icon = item2Icon;
+        if (item3Title !== undefined) ourVision.item3Title = item3Title;
+        if (item3Description !== undefined) ourVision.item3Description = item3Description;
+        if (item3Icon !== undefined) ourVision.item3Icon = item3Icon;
+
+        const updated = await ourVision.save();
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get discover section content (singleton)
+// @route   GET /api/content/discover
+// @access  Public
+const getDiscoverSection = async (req, res) => {
+    try {
+        const discover = await DiscoverSection.getSingleton();
+        res.json(discover);
+    } catch (error) {
+        res.json({
+            badge: 'Elevate Your Ritual',
+            title: 'Discover Your',
+            highlightText: 'Ultimate Glow',
+            description: 'Curate a bespoke skincare routine tailored to your unique needs. Unveil skin that is visibly firmer, deeply hydrated, and luminous.',
+            link: '/shop',
+            linkText: 'Shop The Ritual'
+        });
+    }
+};
+
+// @desc    Update discover section content
+// @route   PUT /api/content/discover
+// @access  Private/Admin
+const updateDiscoverSection = async (req, res) => {
+    try {
+        const discover = await DiscoverSection.getSingleton();
+        const { badge, title, highlightText, description, link, linkText } = req.body;
+
+        if (badge !== undefined) discover.badge = badge;
+        if (title !== undefined) discover.title = title;
+        if (highlightText !== undefined) discover.highlightText = highlightText;
+        if (description !== undefined) discover.description = description;
+        if (link !== undefined) discover.link = link;
+        if (linkText !== undefined) discover.linkText = linkText;
+
+        const updated = await discover.save();
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Get trust badges
 // @route   GET /api/content/trust-badges
 // @access  Public
@@ -310,9 +409,19 @@ const getTrustBadges = async (req, res) => {
           where: { isActive: true },
           order: [['order', 'ASC']]
         });
-        res.json(badges);
+        const sanitized = badges.map(b => {
+            const item = b.toJSON ? b.toJSON() : { ...b };
+            item.icon = '✦';
+            return item;
+        });
+        res.json(sanitized);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.json([
+            { id: '1', text: "Ethically Sourced", icon: "✦", order: 1 },
+            { id: '2', text: "Handcrafted Excellence", icon: "✦", order: 2 },
+            { id: '3', text: "Lifetime Warranty", icon: "✦", order: 3 },
+            { id: '4', text: "Secure Shipping", icon: "✦", order: 4 }
+        ]);
     }
 };
 
@@ -320,9 +429,14 @@ const getTrustBadges = async (req, res) => {
 // @route   POST /api/content/trust-badges
 // @access  Private/Admin
 const addTrustBadge = async (req, res) => {
-    const { text, icon, order } = req.body;
+    const { text, order } = req.body;
     try {
-        const createdBadge = await TrustBadge.create({ text, icon, order });
+        const createdBadge = await TrustBadge.create({ 
+            text, 
+            icon: '✦', 
+            order: order !== undefined ? order : 0,
+            isActive: true 
+        });
         res.status(201).json(createdBadge);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -594,6 +708,10 @@ module.exports = {
   updateHeritage,
   getGoldStandard,
   updateGoldStandard,
+  getOurVision,
+  updateOurVision,
+  getDiscoverSection,
+  updateDiscoverSection,
   getTrustBadges,
   addTrustBadge,
   deleteTrustBadge,
