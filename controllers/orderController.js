@@ -106,14 +106,6 @@ const addOrderItems = asyncHandler(async (req, res) => {
             }
         }
 
-        // Send Order Confirmation Email
-        try {
-            const { sendOrderEmail } = require('../utils/emailService');
-            await sendOrderEmail(order, req.user);
-        } catch (error) {
-            console.error('Order email send failed:', error);
-        }
-
         res.status(201).json(order);
     }
 });
@@ -276,16 +268,6 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         
         const updatedOrder = await order.save();
 
-        // Send Status Update Email
-        try {
-            const user = await User.findByPk(order.userId);
-            const { sendOrderStatusEmail } = require('../utils/emailService');
-            if (user) {
-                await sendOrderStatusEmail(updatedOrder, user);
-            }
-        } catch (error) {
-            console.error('Failed to send status email:', error);
-        }
 
         res.json(updatedOrder);
     } else {
@@ -321,16 +303,6 @@ const cancelOrder = asyncHandler(async (req, res) => {
 
     const updatedOrder = await order.save();
 
-    // Send Cancellation Email
-    try {
-        const user = await User.findByPk(order.userId);
-        const { sendOrderStatusEmail } = require('../utils/emailService');
-        if (user) {
-            await sendOrderStatusEmail(updatedOrder, user);
-        }
-    } catch (error) {
-        console.error('Failed to send cancellation email:', error);
-    }
 
     res.json(updatedOrder);
 });
@@ -449,9 +421,14 @@ const createRazorpayOrder = asyncHandler(async (req, res) => {
             receipt: `rcpt_${order.orderNumber || order.id.substring(0, 10)}`
         };
 
-        const razorpayOrder = await instance.orders.create(options);
-
-        res.json(razorpayOrder);
+        try {
+            const razorpayOrder = await instance.orders.create(options);
+            res.json(razorpayOrder);
+        } catch (err) {
+            console.error('Razorpay order creation failed:', JSON.stringify(err?.error || err), 'HTTP', err?.statusCode);
+            res.status(502);
+            throw new Error(`Razorpay: ${err?.error?.description || err?.message || 'order creation failed'}`);
+        }
     } else {
         res.status(404);
         throw new Error('Order not found');

@@ -1,6 +1,9 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (options) => {
+    if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
+        throw new Error('Email not configured: set EMAIL_USERNAME and EMAIL_PASSWORD in .env');
+    }
     // 1. Create a transporter
     const transporter = nodemailer.createTransport({
         service: 'gmail', // or use host/port for other providers like SendGrid/Mailgun
@@ -45,11 +48,11 @@ const sendOrderEmail = async (order, user) => {
 
     const message = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-            <h2 style="color: #D4AF37; text-align: center;">Order Confrimation</h2>
+            <h2 style="color: #D4AF37; text-align: center;">Order Confirmation</h2>
             <p>Hi ${user.name},</p>
             <p>Thank you for your order! We are processing it and will notify you when it ships.</p>
             
-            <h3 style="background: #f4f4f4; padding: 10px;">Order #${order._id}</h3>
+            <h3 style="background: #f4f4f4; padding: 10px;">Order #${order.id}</h3>
             <p><strong>Status:</strong> ${order.status}</p>
             <p><strong>Payment Method:</strong> ${order.paymentMethod}</p>
 
@@ -80,9 +83,9 @@ const sendOrderEmail = async (order, user) => {
             <div style="margin-top: 20px; background: #f9f9f9; padding: 15px;">
                 <h4>Shipping Address:</h4>
                 <p>
-                    ${order.shippingAddress.address},<br>
-                    ${order.shippingAddress.city}, ${order.shippingAddress.postalCode},<br>
-                    ${order.shippingAddress.country}
+                    ${order.shippingAddress?.address || order.shippingAddress?.street || ''},<br>
+                    ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.postalCode || order.shippingAddress?.pincode || ''},<br>
+                    ${order.shippingAddress?.country || 'India'}
                 </p>
             </div>
 
@@ -94,7 +97,7 @@ const sendOrderEmail = async (order, user) => {
 
     await sendEmail({
         email: user.email,
-        subject: `Order Confirmation - Order #${order._id}`,
+        subject: `Order Confirmation - Order #${order.id}`,
         message
     });
 };
@@ -104,7 +107,7 @@ const sendOrderStatusEmail = async (order, user) => {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
             <h2 style="color: #D4AF37; text-align: center;">Order Update</h2>
             <p>Hi ${user.name},</p>
-            <p>Your order <strong>#${order._id}</strong> status has been updated.</p>
+            <p>Your order <strong>#${order.id}</strong> status has been updated.</p>
             
             <div style="background: #f4f4f4; padding: 15px; text-align: center; margin: 20px 0;">
                 <h3 style="margin: 0; color: #333;">Current Status: <span style="color: #D4AF37;">${order.status}</span></h3>
@@ -123,7 +126,7 @@ const sendOrderStatusEmail = async (order, user) => {
 
     await sendEmail({
         email: user.email,
-        subject: `Order Updated - Order #${order._id}`,
+        subject: `Order Updated - Order #${order.id}`,
         message
     });
 };
