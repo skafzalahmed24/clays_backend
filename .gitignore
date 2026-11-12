@@ -21,3 +21,6 @@ uploads/
 
 # Local Tooling
 .husky/
+
+# Stray copy of server.js
+utils/server
