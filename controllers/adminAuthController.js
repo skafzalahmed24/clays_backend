@@ -14,6 +14,10 @@ const loginAdmin = async (req, res) => {
         const admin = await Admin.findOne({ where: { email: email ? email.toLowerCase() : '' } });
 
         if (admin && (await admin.matchPassword(password))) {
+            if (!admin.role) {
+                admin.role = 'admin';
+                await admin.save().catch(() => {});
+            }
             // Generate Refresh Token
             const refreshToken = generateRefreshToken(res, admin.id);
 
@@ -21,7 +25,7 @@ const loginAdmin = async (req, res) => {
                 _id: admin.id,
                 name: admin.name,
                 email: admin.email,
-                role: admin.role,
+                role: admin.role || 'admin',
                 token: generateAccessToken(admin.id),
                 refreshToken,
             });

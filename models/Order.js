@@ -49,6 +49,11 @@ const Order = sequelize.define('Order', {
         allowNull: false,
         defaultValue: 0.0,
     },
+    codFee: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        defaultValue: 0.0,
+    },
     totalPrice: {
         type: DataTypes.FLOAT,
         allowNull: false,
@@ -97,5 +102,14 @@ Order.prototype.toJSON = function () {
     }
     return values;
 };
+
+// Safe idempotent self-migration to ensure codFee column exists in PostgreSQL
+(async () => {
+    try {
+        await sequelize.query('ALTER TABLE "Orders" ADD COLUMN IF NOT EXISTS "codFee" FLOAT DEFAULT 0.0;');
+    } catch (err) {
+        // Ignored if table does not exist yet before initial sync
+    }
+})();
 
 module.exports = Order;

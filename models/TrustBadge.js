@@ -13,7 +13,8 @@ const TrustBadge = sequelize.define('TrustBadge', {
     },
     icon: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
+        defaultValue: '✦',
     },
     order: {
         type: DataTypes.INTEGER,

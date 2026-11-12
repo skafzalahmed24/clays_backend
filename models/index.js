@@ -7,6 +7,7 @@ const Blog = require('./Blog');
 const Category = require('./Category');
 const Contact = require('./Contact');
 const Coupon = require('./Coupon');
+const DiscoverSection = require('./DiscoverSection');
 const FAQ = require('./FAQ');
 const GeneralSetting = require('./GeneralSetting');
 const GoldStandard = require('./GoldStandard');
@@ -14,6 +15,7 @@ const Heritage = require('./Heritage');
 const HeroSlide = require('./HeroSlide');
 const MegaMenu = require('./MegaMenu');
 const Order = require('./Order');
+const OurVision = require('./OurVision');
 const Page = require('./Page');
 const Product = require('./Product');
 const SocialPost = require('./SocialPost');
@@ -42,6 +44,7 @@ const db = {
     Category,
     Contact,
     Coupon,
+    DiscoverSection,
     FAQ,
     GeneralSetting,
     GoldStandard,
@@ -49,6 +52,7 @@ const db = {
     HeroSlide,
     MegaMenu,
     Order,
+    OurVision,
     Page,
     Product,
     SocialPost,

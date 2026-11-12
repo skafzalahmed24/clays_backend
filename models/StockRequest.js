@@ -26,6 +26,14 @@ const StockRequest = sequelize.define('StockRequest', {
             isEmail: true,
         },
     },
+    phone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    pincode: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     status: {
         type: DataTypes.STRING,
         defaultValue: 'Pending',
@@ -48,5 +56,15 @@ StockRequest.prototype.toJSON = function () {
     values._id = values.id;
     return values;
 };
+
+// Safe idempotent self-migration to ensure phone and pincode columns exist in PostgreSQL
+(async () => {
+    try {
+        await sequelize.query('ALTER TABLE "StockRequests" ADD COLUMN IF NOT EXISTS "phone" VARCHAR(255);');
+        await sequelize.query('ALTER TABLE "StockRequests" ADD COLUMN IF NOT EXISTS "pincode" VARCHAR(255);');
+    } catch (err) {
+        // Ignored if table does not exist yet before initial sync
+    }
+})();
 
 module.exports = StockRequest;

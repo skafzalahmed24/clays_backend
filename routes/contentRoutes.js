@@ -15,6 +15,10 @@ const {
   updateHeritage,
   getGoldStandard,
   updateGoldStandard,
+  getOurVision,
+  updateOurVision,
+  getDiscoverSection,
+  updateDiscoverSection,
   getTrustBadges,
   addTrustBadge,
   deleteTrustBadge,
@@ -44,6 +48,8 @@ router.route('/social/:id').delete(protectAdmin, admin, deleteSocialPost);
 
 router.route('/heritage').get(protectPublic, getHeritage).put(protectAdmin, admin, updateHeritage);
 router.route('/gold-standard').get(protectPublic, getGoldStandard).put(protectAdmin, admin, updateGoldStandard);
+router.route('/our-vision').get(protectPublic, getOurVision).put(protectAdmin, admin, updateOurVision);
+router.route('/discover').get(protectPublic, getDiscoverSection).put(protectAdmin, admin, updateDiscoverSection);
 
 router.route('/trust-badges').get(protectPublic, getTrustBadges).post(protectAdmin, admin, addTrustBadge);
 router.route('/trust-badges/:id').delete(protectAdmin, admin, deleteTrustBadge);

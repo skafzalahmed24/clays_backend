@@ -307,31 +307,36 @@ const addUserAddress = async (req, res) => {
     const { firstName, lastName, email, phone, address, apartment, city, postalCode, isDefault } = req.body;
 
     try {
-        const user = await User.findByPk(req.user.id);
-        const addresses = user.addresses || [];
+        const userId = req.user?.id || req.user?._id;
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const addresses = Array.isArray(user.addresses) ? user.addresses : [];
 
         if (isDefault) {
             addresses.forEach(addr => addr.isDefault = false);
         }
 
-        const makeDefault = addresses.length === 0 || isDefault;
+        const makeDefault = addresses.length === 0 || Boolean(isDefault);
         const addressId = crypto.randomUUID();
 
-        addresses.push({
+        const newAddress = {
             id: addressId,
             _id: addressId,
-            firstName,
-            lastName,
-            email,
-            phone,
-            address,
-            apartment,
-            city,
-            postalCode,
+            firstName: firstName ? String(firstName).trim() : '',
+            lastName: lastName ? String(lastName).trim() : '',
+            email: email ? String(email).trim() : '',
+            phone: phone ? String(phone).trim() : '',
+            address: address ? String(address).trim() : '',
+            apartment: apartment ? String(apartment).trim() : '',
+            city: city ? String(city).trim() : '',
+            postalCode: postalCode ? String(postalCode).trim() : '',
             isDefault: makeDefault
-        });
+        };
 
-        user.addresses = [...addresses];
+        user.addresses = [...addresses, newAddress];
         user.changed('addresses', true);
         await user.save();
         successResponse(res, user.addresses);
@@ -347,29 +352,41 @@ const updateUserAddress = async (req, res) => {
     const { firstName, lastName, email, phone, address, apartment, city, postalCode, isDefault } = req.body;
 
     try {
-        const user = await User.findByPk(req.user.id);
-        const addresses = user.addresses || [];
-        const addressToUpdate = addresses.find(addr => addr.id === req.params.addressId || addr._id === req.params.addressId);
+        const userId = req.user?.id || req.user?._id;
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
 
-        if (!addressToUpdate) {
+        const addresses = Array.isArray(user.addresses) ? user.addresses : [];
+        const addressIndex = addresses.findIndex(addr => addr.id === req.params.addressId || addr._id === req.params.addressId);
+
+        if (addressIndex === -1) {
             return res.status(404).json({ message: 'Address not found' });
         }
 
-        if (isDefault && !addressToUpdate.isDefault) {
-            addresses.forEach(addr => addr.isDefault = false);
-        }
+        const currentAddr = addresses[addressIndex];
+        const willBeDefault = isDefault !== undefined ? Boolean(isDefault) : Boolean(currentAddr.isDefault);
 
-        if (firstName) addressToUpdate.firstName = firstName;
-        if (lastName) addressToUpdate.lastName = lastName;
-        if (email) addressToUpdate.email = email;
-        if (phone) addressToUpdate.phone = phone;
-        if (address) addressToUpdate.address = address;
-        if (apartment !== undefined) addressToUpdate.apartment = apartment;
-        if (city) addressToUpdate.city = city;
-        if (postalCode) addressToUpdate.postalCode = postalCode;
-        if (isDefault !== undefined) addressToUpdate.isDefault = isDefault;
+        const updatedAddresses = addresses.map((addr, idx) => {
+            if (idx === addressIndex) {
+                return {
+                    ...addr,
+                    ...(firstName !== undefined && { firstName: String(firstName).trim() }),
+                    ...(lastName !== undefined && { lastName: String(lastName).trim() }),
+                    ...(email !== undefined && { email: String(email).trim() }),
+                    ...(phone !== undefined && { phone: String(phone).trim() }),
+                    ...(address !== undefined && { address: String(address).trim() }),
+                    apartment: apartment !== undefined ? String(apartment || '').trim() : (addr.apartment || ''),
+                    ...(city !== undefined && { city: String(city).trim() }),
+                    ...(postalCode !== undefined && { postalCode: String(postalCode).trim() }),
+                    isDefault: willBeDefault
+                };
+            }
+            return willBeDefault ? { ...addr, isDefault: false } : addr;
+        });
 
-        user.addresses = [...addresses];
+        user.addresses = updatedAddresses;
         user.changed('addresses', true);
         await user.save();
         successResponse(res, user.addresses);
